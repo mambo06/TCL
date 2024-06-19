@@ -64,6 +64,8 @@ class JointLoss(th.nn.Module):
         self.similarity_fn = self._cosine_simililarity if options["cosine_similarity"] else self._dot_simililarity
         # Loss function
         self.criterion = th.nn.CrossEntropyLoss(reduction="sum")
+        self.mseLoss = th.nn.MSELoss()
+
 
     def _get_mask_for_neg_samples(self):
         # Diagonal 2Nx2N identity matrix, which consists of four (NxN) quadrants
@@ -108,27 +110,10 @@ class JointLoss(th.nn.Module):
     def XNegloss(self, representation):
         # Compute similarity matrix
         similarity = self.similarity_fn(representation, representation)
-        # print(similarity.shape)
-        # Get similarity scores for the positive samples from the diagonal of the first quadrant in 2Nx2N matrix
-        # l_pos = th.diag(similarity, int(self.batch_size/2))
-        # # Get similarity scores for the positive samples from the diagonal of the third quadrant in 2Nx2N matrix
-        # r_pos = th.diag(similarity, int(-self.batch_size/2))
-        # # print(l_pos.shape,r_pos.shape)
-        # # Concatenate all positive samples as a 2nx1 column vector
-        # positives = th.cat([l_pos, r_pos]).view(self.batch_size, 1)
-        # # print(positives.shape)
-        # # Get similarity scores for the negative samples (samples outside diagonals in 4 quadrants in 2Nx2N matrix)
-        # negatives = similarity[self.mask_for_neg_samples].view( self.batch_size, -1)
-        # Concatenate positive samples as the first column to negative samples array
-        # logits = th.cat((positives, negatives), dim=1)
 
         logits = similarity
-        # print(logits.shape)
-        # Normalize logits via temperature
+
         logits /= self.temperature
-        # print(logits)
-        # Labels are all zeros since all positive samples are the 0th column in logits array.
-        # So we will select positive samples as numerator in NTXentLoss
         labels = th.zeros( self.batch_size).to(self.device).long()
         # Compute total loss
         loss = self.criterion(logits, labels)

@@ -9,7 +9,7 @@ import pandas as pd
 import torch as th
 # from tqdm import tqdm
 
-from utils.loss_functions import JointLoss
+from utils.loss_functionsV1 import JointLoss
 from utils.model_plot import save_loss_plot
 from utils.model_utils import AEWrapper
 from utils.utils import set_seed, set_dirs
@@ -115,7 +115,6 @@ class CFL:
 
     
     
-    # consider this for FL
     def calculate_loss(self, x_tilde_list, Xorig):
         # xi = xi[0] # single partition
         # print(xi.shape)
@@ -153,65 +152,9 @@ class CFL:
 
     def update_autoencoder(self, tloss, retain_graph=True): # 6 torch.Size([64, 343]) original mixed 2 partitions, torch.Size([64, 784]) original data stacked
 
-    # def update_autoencoder(self, x_tilde_list, Xorig): # 6 torch.Size([64, 343]) original mixed 2 partitions, torch.Size([64, 784]) original data stacked
-        """Updates autoencoder model using subsets of features
-
-        Args:
-            x_tilde_list (list): A list that contains subsets in torch.tensor format
-            Xorig (torch.tensor): Ground truth data used to generate subsets
-
-        """
-
-        # total_loss, contrastive_loss, recon_loss, zrecon_loss = [], [], [], []
-
-
-        # pass data through model
-        # for xi in x_tilde_list: # partitioned data in a batch
-            # If we are using combination of subsets use xi since it is already a concatenation of two subsets. 
-            # Else, concatenate subset with itself just to make the computation of loss compatible with the case, 
-            # in which we use the combinations. Note that Xorig is already concatenation of two copies of original input.
-        # Xinput = xi if self.is_combination else self.process_batch(xi, xi)
-        # # print(Xinput.shape) torch.Size([64, 343])
-
-        # # Forwards pass
-        # z, latent, Xrecon = self.encoder(Xinput) # normalized layer, encoded, decoded
-        # # print(z.shape, latent.shape, Xrecon.shape) = torch.Size([64, 784]) torch.Size([64, 784]) torch.Size([64, 784])
-        # # 343 to 784? get from option forward or encoder
-
-        # # If recontruct_subset is True, the output of decoder should be compared against subset (input to encoder)
-        # Xorig = Xinput if self.options["reconstruction"] and self.options["reconstruct_subset"] else Xorig # ???
-        # # print(Xorig.shape) torch.Size([64, 784])
-
-        # # Compute losses
-        # tloss, closs, rloss, zloss = self.joint_loss(z, Xrecon, Xorig) # normalized, decoded, pos or neg
-        # return tloss, closs, rloss, zloss
-            # print(tloss, closs, rloss, zloss) = tensor(59.7908, grad_fn=<AddBackward0>) tensor(4.1386, grad_fn=<DivBackward0>) tensor(55.6447, grad_fn=<DivBackward0>) tensor(0.0075, grad_fn=<DivBackward0>)
-            # Accumulate losses
-        #     total_loss.append(tloss)
-        #     contrastive_loss.append(closs)
-        #     recon_loss.append(rloss)
-        #     zrecon_loss.append(zloss)
-
-        # # do this in the server
-        # # Compute the average of losses 
-        # n = len(total_loss)
-        # total_loss = sum(total_loss) / n
-        # contrastive_loss = sum(contrastive_loss) / n
-        # recon_loss = sum(recon_loss) / n
-        # zrecon_loss = sum(zrecon_loss) / n
-
-        # # Record reconstruction loss
-        # self.loss["tloss_b"].append(total_loss.item())
-        # self.loss["closs_b"].append(contrastive_loss.item())
-        # self.loss["rloss_b"].append(recon_loss.item())
-        # self.loss["zloss_b"].append(zrecon_loss.item())
-
-        # # back to client
-        # # Update Autoencoder params
+    
         self._update_model(tloss, self.optimizer_ae, retain_graph=retain_graph)
-        # # Delete loss and associated graph for efficient memory usage
-        # del total_loss, contrastive_loss, recon_loss, zrecon_loss, tloss, closs, rloss, zloss
-        # gc.collect()
+
 
     def get_combinations_of_subsets(self, x_tilde_list):
         """Generate a list of combinations of subsets from the list of subsets
