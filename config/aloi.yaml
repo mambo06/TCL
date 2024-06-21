@@ -59,3 +59,5 @@ reconstruct_subset: true         # If True, reconstructs subset of given input t
 
 ns : false                        # no pearson shuffle. if true no pearson shuffle applied to the loaded data
 local : false
+
+# The best hyperparameters are  {'learning_rate': 0.015, 'max_depth': 8, 'n_estimators': 1000}

@@ -72,11 +72,11 @@ class JointLoss(th.nn.Module):
         # Mask to use to get negative samples from similarity matrix
         self.mask_for_neg_samples = self._get_mask_for_neg_samples().type(th.bool)
         # Function to generate similarity matrix: Cosine, or Dot product
-        self.similarity_fn = self._dot_simililarity
+        self.similarity_fn = self._cosine_simililarity if options["cosine_similarity"] else self._dot_simililarity
         # Loss function
         self.criterion = th.nn.CrossEntropyLoss(reduction="sum")
         self.mseLoss = th.nn.MSELoss()
-
+        
     def _get_mask_for_neg_samples(self):
         # Diagonal 2Nx2N identity matrix, which consists of four (NxN) quadrants
         diagonal = np.eye(2 * self.batch_size)

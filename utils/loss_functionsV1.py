@@ -114,9 +114,11 @@ class JointLoss(th.nn.Module):
         logits = similarity
 
         logits /= self.temperature
-        labels = th.zeros( self.batch_size).to(self.device).long()
+        # labels = th.zeros( self.batch_size).to(self.device).long()
         # Compute total loss
-        loss = self.criterion(logits, labels)
+        # loss = self.criterion(logits, labels)
+        labels = th.zeros( self.batch_size).to(self.device).float()
+        loss = self.mseLoss(logits, labels)
         # Loss per sample
         closs = loss / ( self.batch_size)
         # Return contrastive loss
