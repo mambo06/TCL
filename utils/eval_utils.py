@@ -59,18 +59,19 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
     regularisation_list = [0.01, 0.1 , 1, 10, 1e2, 1e3, 1e4, 1e5, 1e6]
     regularisation_list = [1, 10,1e2,]
 
-    # regularisation_list = range(90,110,5)
+    regularisation_list = range(90,110,5)
     # regularisation_list = [1]
 
     param_grid = {"max_depth":    [ 8,10,],
               "n_estimators": [900, 1000],
               "learning_rate": [0.01, 0.015]}
 
-    regularisation_list = [1] # overide all
+    # regularisation_list = [1] # overide all
     if config['task_type'] == 'regression':
-        # regularisation_list = range(90,140,10)
-        regularisation_list = [ 0.01, 0.1, 1, 10, 1e2, 1e3, 1e4]
-        regularisation_list = range(90,110,5)
+        regularisation_list = range(90,140,10)
+        # regularisation_list = [ 0.01, 0.1, 1, 10, 1e2, 1e3, 1e4]
+        regularisation_list = [1, 10,1e2,]
+        # regularisation_list = range(90,110,5)
         # regularisation_list = [5,7,9]
         
         regularisation_list = [1]
@@ -90,8 +91,8 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             # clf = RandomForestRegressor(max_depth=c)
 
             # start xgboost
-            param_grid = {"max_depth":    [ 8],
-              "n_estimators": [ 900,],
+            param_grid = {"max_depth": [ 8],
+              "n_estimators": [ 1000,],
               "learning_rate": [0.015]}
 
             # clf = xgb.XGBRegressor(eval_metric='rmse')
@@ -149,14 +150,14 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
         else:
             clf = LogisticRegression( solver='lbfgs', C=c, multi_class='multinomial', max_iter=2000,)
             # clf = DecisionTreeClassifier(random_state=0,criterion='entropy',)
-            # clf = RandomForestClassifier(criterion='log_loss', n_estimators=c, )
+            clf = RandomForestClassifier(criterion='log_loss', n_estimators=c, )
             # clf = Perceptron(tol=1e-3, random_state=0)        
             # clf = SVC(C=c) 
             # clf = LinearSVC(C=c)
             # Fit model to the data
             # clf = KNeighborsClassifier(n_neighbors=c)
 
-            clf = xgb.XGBClassifier()
+            # clf = xgb.XGBClassifier()
             # param_grid = {"max_depth":    [8],
             #       "n_estimators": [ 700],
             #       "learning_rate": [0.015]}

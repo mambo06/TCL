@@ -8,8 +8,8 @@ shallow_architecture: true        # If True, we use shallow encoder/decoder arch
 # Architecture-related params
 # The dimension of input features is added automatically, so it does not need to be defined here.
 dims:                             # Autoencoder architecture - This is for Encoder - Decoder is symmetric to Encoder.
-  - 256                           # Hidden. 
-  - 256
+  - 699                           # Hidden. 
+  - 699
 
 isBatchNorm: true                # Set True to use BatchNorm layer
 isDropout: true                  # Set True to use Dropout layer
@@ -40,7 +40,7 @@ aggregation: mean                 # options:  mean (default), sum, max, min, and
 add_noise: true                   # If True, it adds noise. The noise type is defined in "noise_type"
 noise_type: gaussian_noise            # Type of noise to add to. Choices: swap_noise, gaussian_noise, zero_out
 masking_ratio: [0.1,0.1]                # Percentage of the feature to add noise to binomial, all applied
-noise_level: [0.9,0.9]                  # Stdev defined for Gaussian noise
+noise_level: [0.1,0.1]                  # Stdev defined for Gaussian noise
 
 # Data
 n_classes: 10                     # Number of classes in the data 

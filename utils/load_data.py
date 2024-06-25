@@ -203,7 +203,7 @@ class TabularDataset(Dataset):
         dir_ = 'data/'+ dataset_name 
         if self.config['dataset'] in dirs : # if from other paper, datra not normalized
             # norm = 'l2' # overide for test
-            N_train, N_test,N_val, y_train, y_test,y_val = self.joinData(cat_policy=self.config['cat_policy'],normalization=True, norm=self.config['norm'])
+            N_train, N_test,N_val, y_train, y_test,y_val = self.joinData(cat_policy=self.config['cat_policy'],normalization=False, norm=self.config['norm'])
             # N_train, N_test,N_val, y_train, y_test,y_val = self.joinData(cat_policy='counter',normalization=True, norm=norm)
             # N_train, N_test, y_train, y_test = train_test_split(x,y,test_size=1- self.config['training_data_ratio'],random_state=42)
             # N_train, N_val, y_train, y_val = train_test_split(N_train,y_train,test_size=self.config['validation_data_ratio'],random_state=42)

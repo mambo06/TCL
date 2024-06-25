@@ -61,7 +61,7 @@ class JointLoss(th.nn.Module):
         # Mask to use to get negative samples from similarity matrix
         self.mask_for_neg_samples = self._get_mask_for_neg_samples().type(th.bool)
         # Function to generate similarity matrix: Cosine, or Dot product
-        self.similarity_fn = self._cosine_simililarity if options["cosine_similarity"] else self._dot_simililarity
+        self.similarity_fn = self._dot_simililarity
         # Loss function
         self.criterion = th.nn.CrossEntropyLoss(reduction="sum")
         self.mseLoss = th.nn.MSELoss()
@@ -86,26 +86,18 @@ class JointLoss(th.nn.Module):
         # print(x.shape,y.shape)
         x = x[:int(x.shape[0]/2)]
         y = y[int(y.shape[0]/2):]
+        # print(x.shape,y.shape)
         # # Reshape x: (2N, C) -> (2N, 1, C)
         x = x.unsqueeze(1)
-        # # Reshape y: (2N, C) -> (1, C, 2N)
-        y = y.T.unsqueeze(0)
+        # # # Reshape y: (2N, C) -> (1, C, 2N)
+        y = y.unsqueeze(1)
         # # Similarity shape: (2N, 2N)
         # print(x.shape,y.shape)
         similarity = th.tensordot(x, y, dims=2)
+        # print(similarity.shape)
         # similarity = th.tensordot(x, y)
         return similarity
 
-    def _cosine_simililarity(self, x, y):
-        x = x[:int(x.shape[0]/2)]
-        y = y[int(y.shape[0]/2):]
-        similarity = th.nn.CosineSimilarity(dim=-1)
-        # Reshape x: (2N, C) -> (2N, 1, C)
-        x = x.unsqueeze(1)
-        # Reshape y: (2N, C) -> (1, C, 2N)
-        y = y.unsqueeze(0)
-        # Similarity shape: (2N, 2N)
-        return similarity(x, y)
 
     def XNegloss(self, representation):
         # Compute similarity matrix
@@ -116,7 +108,8 @@ class JointLoss(th.nn.Module):
         logits /= self.temperature
         
         if self.options['task_type'] == 'regression' :
-            labels = th.zeros( self.batch_size).to(self.device).float()
+            # labels = th.zeros( self.batch_size).to(self.device).float()
+            labels = th.zeros( logits.shape).to(self.device).float()
             loss = self.mseLoss(logits, labels)
         else:
             labels = th.zeros( self.batch_size).to(self.device).long()
