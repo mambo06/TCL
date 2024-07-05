@@ -66,7 +66,7 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
               "n_estimators": [900, 1000],
               "learning_rate": [0.01, 0.015]}
 
-    # regularisation_list = [1] # overide all
+    regularisation_list = [1] # overide all
     if config['task_type'] == 'regression':
         regularisation_list = range(90,140,10)
         # regularisation_list = [ 0.01, 0.1, 1, 10, 1e2, 1e3, 1e4]
@@ -91,22 +91,22 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             # clf = RandomForestRegressor(max_depth=c)
 
             # start xgboost
-            param_grid = {"max_depth": [ 8],
-              "n_estimators": [ 1000,],
-              "learning_rate": [0.015]}
+            # param_grid = {"max_depth": [ 8],
+            #   "n_estimators": [ 1000,],
+            #   "learning_rate": [0.015]}
 
-            # clf = xgb.XGBRegressor(eval_metric='rmse')
-            # search = GridSearchCV(clf, param_grid, cv=2,verbose=2, n_jobs=-1).fit(z_train, y_train)
-            # print("The best hyperparameters are ",search.best_params_)
+            clf = xgb.XGBRegressor(eval_metric='rmse')
+            search = GridSearchCV(clf, param_grid, cv=2,verbose=2, n_jobs=-1).fit(z_train, y_train)
+            print("The best hyperparameters are ",search.best_params_)
 
-            # clf = xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
-            #                n_estimators  = search.best_params_["n_estimators"],
-            #                max_depth     = search.best_params_["max_depth"],
-            #                eval_metric='rmse')
-            clf = xgb.XGBRegressor(learning_rate = param_grid["learning_rate"][-1],
-                           n_estimators  = param_grid["n_estimators"][-1],
-                           max_depth     = param_grid["max_depth"][-1],
+            clf = xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
+                           n_estimators  = search.best_params_["n_estimators"],
+                           max_depth     = search.best_params_["max_depth"],
                            eval_metric='rmse')
+            # clf = xgb.XGBRegressor(learning_rate = param_grid["learning_rate"][-1],
+            #                n_estimators  = param_grid["n_estimators"][-1],
+            #                max_depth     = param_grid["max_depth"][-1],
+            #                eval_metric='rmse')
             # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
             # end xgboost
 
@@ -150,24 +150,24 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
         else:
             clf = LogisticRegression( solver='lbfgs', C=c, multi_class='multinomial', max_iter=2000,)
             # clf = DecisionTreeClassifier(random_state=0,criterion='entropy',)
-            clf = RandomForestClassifier(criterion='log_loss', n_estimators=c, )
+            # clf = RandomForestClassifier(criterion='log_loss', n_estimators=c, )
             # clf = Perceptron(tol=1e-3, random_state=0)        
             # clf = SVC(C=c) 
             # clf = LinearSVC(C=c)
             # Fit model to the data
             # clf = KNeighborsClassifier(n_neighbors=c)
 
-            # clf = xgb.XGBClassifier()
+            clf = xgb.XGBClassifier()
             # param_grid = {"max_depth":    [8],
-            #       "n_estimators": [ 700],
+            #       "n_estimators": [ 1000],
             #       "learning_rate": [0.015]}
-            # search = GridSearchCV(clf, param_grid, cv=2,verbose=2, n_jobs=-1).fit(z_train, y_train)
-            # print("The best hyperparameters are ",search.best_params_)
+            search = GridSearchCV(clf, param_grid, cv=2,verbose=2, n_jobs=-1).fit(z_train, y_train)
+            print("The best hyperparameters are ",search.best_params_)
 
-            # clf = xgb.XGBClassifier(learning_rate = search.best_params_["learning_rate"],
-            #                n_estimators  = search.best_params_["n_estimators"],
-            #                max_depth     = search.best_params_["max_depth"],
-            #                eval_metric='logloss')
+            clf = xgb.XGBClassifier(learning_rate = search.best_params_["learning_rate"],
+                           n_estimators  = search.best_params_["n_estimators"],
+                           max_depth     = search.best_params_["max_depth"],
+                           eval_metric='logloss')
             # clf = xgb.XGBClassifier(learning_rate = param_grid["learning_rate"][-1],
             #                n_estimators  = param_grid["n_estimators"][-1],
             #                max_depth     = param_grid["max_depth"][-1],
