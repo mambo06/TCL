@@ -44,7 +44,7 @@ class AEWrapper(nn.Module):
         # Forward pass on decoder
         x_recon = self.decoder(latent)
         # Return 
-        return z, latent, x_recon
+        return z, latent, x_recon # normalized encoded, encoded, decoded
 
 
 class Encoder(nn.Module):

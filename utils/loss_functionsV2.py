@@ -65,6 +65,7 @@ class JointLoss(th.nn.Module):
         # Loss function
         self.criterion = th.nn.CrossEntropyLoss(reduction="sum")
         self.mseLoss = th.nn.MSELoss()
+        self.maeLoss = th.nn.L1Loss()
 
 
     def _get_mask_for_neg_samples(self):
@@ -103,7 +104,7 @@ class JointLoss(th.nn.Module):
         # Compute similarity matrix
         similarity = self.similarity_fn(representation, representation)
 
-        logits = similarity
+        logits = similarity #.fill_diagonal_(1)
 
         logits /= self.temperature
         
@@ -121,7 +122,7 @@ class JointLoss(th.nn.Module):
         # Return contrastive loss
         return closs
 
-    def forward(self, representation, xrecon, xorig):
+    def forward(self, representation, xrecon, xorig): # normalized encoded, decoded, origin
         """
 
         Args:
@@ -132,7 +133,8 @@ class JointLoss(th.nn.Module):
         """
 
         # recontruction loss
-        recon_loss = getMSEloss(xrecon, xorig) if self.options["reconstruction"] else getBCELoss(xrecon, xorig)
+        #decoded vs origin
+        recon_loss = self.maeLoss(xrecon, xorig) if self.options["reconstruction"] else getBCELoss(xrecon, xorig)
 
         # Initialize contrastive and distance losses with recon_loss as placeholder
         closs, zrecon_loss = recon_loss, recon_loss
@@ -141,12 +143,12 @@ class JointLoss(th.nn.Module):
         loss = recon_loss
 
         if self.options["contrastive_loss"]:
-            closs = self.XNegloss(representation)
+            closs = self.XNegloss(representation) # decoded
             loss = loss + closs
 
         if self.options["distance_loss"]:
             # recontruction loss for z
-            zi, zj = th.split(representation, self.batch_size)
+            zi, zj = th.split(representation, self.batch_size) # decoded
 
             # print(representation.shape, zi,zj)
 

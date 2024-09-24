@@ -9,12 +9,13 @@ import pandas as pd
 import torch as th
 # from tqdm import tqdm
 
-from utils.loss_functionsV1 import JointLoss
+from utils.loss_functionsV2 import JointLoss
 from utils.model_plot import save_loss_plot
 from utils.model_utils import AEWrapper
 from utils.utils import set_seed, set_dirs
 
 th.autograd.set_detect_anomaly(True)
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 import random
 
@@ -50,6 +51,7 @@ class CFL:
         self.set_autoencoder()
         # Set scheduler (its use is optional)
         self._set_scheduler()
+        self._set_reduce_lr()
         # Print out model architecture
         # self.print_model_summary()
         self.loss = {"tloss_b": [], "tloss_e": [], "vloss_e": [],
@@ -128,11 +130,11 @@ class CFL:
             Xinput = xi if self.is_combination else self.process_batch(xi, xi)
             # Xinput.to(self.device).float()
             # Forwards pass
-            z, latent, Xrecon = self.encoder(Xinput) # trow this to federated learning
+            z, latent, Xrecon = self.encoder(Xinput) # normalized encoded, encoded, decoded
             # If recontruct_subset is True, the output of decoder should be compared against subset (input to encoder)
             Xorig = Xinput if self.options["reconstruction"] and self.options["reconstruct_subset"] else Xorig
             # Compute losses
-            tloss, closs, rloss, zloss = self.joint_loss(z, Xrecon, Xorig)
+            tloss, closs, rloss, zloss = self.joint_loss(z, Xrecon, Xorig) # normalized encoded, decoded, origin
             # Accumulate losses
             total_loss.append(tloss)
             contrastive_loss.append(closs)
@@ -264,7 +266,7 @@ class CFL:
         # Elif, overwrite x_bar by adding Gaussian noise to x
 
         elif noise_type == "gaussian_noise":
-            x_bar = x + np.random.normal(float(th.mean(x)), noise_level, x.shape)
+            x_bar = x + np.random.normal(float(th.mean(x)), noise_level, x.shape) #loc=0.0, scale=1.0, size=None
 
         else:
             x_bar = x_bar
@@ -368,6 +370,9 @@ class CFL:
         """Sets a scheduler for learning rate of autoencoder"""
         # Set scheduler (Its use will be optional)
         self.scheduler = th.optim.lr_scheduler.StepLR(self.optimizer_ae, step_size=1, gamma=0.99)
+
+    def _set_reduce_lr(self):
+        self.reducer = ReduceLROnPlateau(self.optimizer_ae, 'min', patience=5, factor=0.1,)
 
     def _set_paths(self):
         """ Sets paths to bse used for saving results at the end of the training"""

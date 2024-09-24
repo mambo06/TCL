@@ -8,7 +8,7 @@ from tqdm import tqdm
 import yaml
 
 import evaluations as eval
-from src.modelV1 import CFL
+from src.model import CFL
 from utils.arguments import get_arguments, get_config, print_config_summary
 from utils.load_data import Loader
 from utils.utils import set_dirs, run_with_profiler, update_config_with_model_dims
@@ -72,11 +72,12 @@ def run(config, save_weights=True):
     patient = 0
     
     start0 = True
+    total=len(data)
     for epoch in range(config["epochs"]):
         epoch_loss = []
         # start = time.process_time()
         tqdm_bar = tqdm(enumerate(data), 
-            total=len(data), 
+            total=total, 
             leave=True, 
             desc = 'Training on epoch: ' + str(epoch))
 
@@ -103,8 +104,13 @@ def run(config, save_weights=True):
 
             model.optimizer_ae.step()
             
-            description = 'tloss {0:.2f} closs {1:.2f} rloss {2:.2f} zloss {3:.2f}'.format(tloss.item(),closs.item(),rloss.item(),zloss.item())
-            # tqdm_bar.set_description(description)
+            if i == total-1 :
+                description = 'tloss {0:.2f} closs {1:.2f} rloss {2:.2f} zloss {3:.2f}'.format(np.mean(model.loss["tloss_b"]),
+                    np.mean(model.loss["closs_b"]),
+                    np.mean(model.loss["rloss_b"]),
+                    np.mean(model.loss["zloss_b"])
+                    )
+                tqdm_bar.set_description(description)
 
         epoch_loss = np.mean(epoch_loss)
 
@@ -268,6 +274,12 @@ def run(config, save_weights=True):
 
         _ = model.scheduler.step() if model.options["scheduler"] else None
 
+        if config['reduce_lr']  : 
+            model.reducer.step(epoch_loss)
+            if config['learning_rate_reducer'] != model.reducer.get_last_lr():
+                print('Learning Rate :',model.reducer.get_last_lr())
+                config['learning_rate_reducer'] = model.reducer.get_last_lr()
+
         # training_time = time.process_time() - start
 
     start1 = time.process_time()
@@ -323,6 +335,7 @@ if __name__ == "__main__":
     config['task_type'] = json.loads(Path('data/'+config["dataset"]+'/info.json').read_text())['task_type']
     config['cat_policy'] = json.loads(Path('data/'+config["dataset"]+'/info.json').read_text())['cat_policy']
     config['norm'] = json.loads(Path('data/'+config["dataset"]+'/info.json').read_text())['norm']
+    config['learning_rate_reducer'] = config['learning_rate']
     # Get a copy of autoencoder dimensions
     dims = copy.deepcopy(config["dims"])
     cfg = copy.deepcopy(config)
