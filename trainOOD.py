@@ -87,8 +87,11 @@ def run(config, save_weights=True):
         # for i in tqdm_bar:
 
             # x,y = next(islice(data, i, None))
+            ood_mask = torch.rand(x.shape) < 0.2
+            x = torch.cat([x,ood_mask])
 
             tloss, closs, rloss, zloss = model.fit(x)
+            # tloss *= 0.7
 
             model.loss["tloss_o"].append(tloss.item())
             model.loss["tloss_b"].append(tloss.item())
@@ -98,11 +101,11 @@ def run(config, save_weights=True):
 
             epoch_loss.append(tloss.item())
             
-            # model.optimizer_ae.zero_grad()
+            model.optimizer_ae.zero_grad()
 
-            # tloss.backward()
+            tloss.backward()
 
-            # model.optimizer_ae.step()
+            model.optimizer_ae.step()
             
             if i == total-1 :
                 description = 'tloss {0:.2f} closs {1:.2f} rloss {2:.2f} zloss {3:.2f}'.format(np.mean(model.loss["tloss_b"]),

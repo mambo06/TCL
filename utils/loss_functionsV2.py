@@ -134,7 +134,7 @@ class JointLoss(th.nn.Module):
 
         # recontruction loss
         #decoded vs origin
-        recon_loss = self.maeLoss(xrecon, xorig) if self.options["reconstruction"] else getBCELoss(xrecon, xorig)
+        recon_loss = getMSEloss(xrecon, xorig) if self.options["reconstruction"] else getBCELoss(xrecon, xorig)
 
         # Initialize contrastive and distance losses with recon_loss as placeholder
         closs, zrecon_loss = recon_loss, recon_loss

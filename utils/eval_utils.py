@@ -96,7 +96,7 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             #   "learning_rate": [0.015]}
 
             clf = xgb.XGBRegressor(eval_metric='rmse')
-            search = GridSearchCV(clf, param_grid, cv=2,verbose=2, n_jobs=-1).fit(z_train, y_train)
+            search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
             print("The best hyperparameters are ",search.best_params_)
 
             clf = xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
@@ -380,7 +380,7 @@ def append_tensors_to_lists(list_of_lists, list_of_tensors):
     # Go through each tensor and corresponding list
     for i in range(len(list_of_tensors)):
         # Convert tensor to numpy and append it to the corresponding list
-        list_of_lists[i] += [list_of_tensors[i].cpu().numpy()]
+        list_of_lists[i] += [list_of_tensors[i].detach().numpy()]
     # Return the lists
     return list_of_lists
 

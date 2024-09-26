@@ -98,6 +98,11 @@ class CFL:
 
         # 0 - Update Autoencoder
         tloss, closs, rloss, zloss = self.calculate_loss(x_tilde_list, Xorig) 
+        self.optimizer_ae.zero_grad()
+
+        tloss.backward()
+
+        self.optimizer_ae.step()
 
         return tloss, closs, rloss, zloss
 
