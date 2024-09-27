@@ -9,8 +9,8 @@ import copy
 # import mlflow
 # import yaml
 
-import _eval as eval
-# import _evalRetrain as eval
+# import _eval as eval
+import _evalRetrain as eval
 # from src.model import SubTab
 from utils.arguments import get_arguments, get_config, print_config_summary
 # from utils.load_data import Loader
@@ -54,6 +54,7 @@ if __name__ == "__main__":
     config['task_type'] = json.loads(Path('data/'+config["dataset"]+'/info.json').read_text())['task_type']
     config['cat_policy'] = json.loads(Path('data/'+config["dataset"]+'/info.json').read_text())['cat_policy']
     config['norm'] = json.loads(Path('data/'+config["dataset"]+'/info.json').read_text())['norm']
+    config['ewc'] = False
 
 
     eval.main(config)

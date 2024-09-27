@@ -336,6 +336,7 @@ if __name__ == "__main__":
     config['cat_policy'] = json.loads(Path('data/'+config["dataset"]+'/info.json').read_text())['cat_policy']
     config['norm'] = json.loads(Path('data/'+config["dataset"]+'/info.json').read_text())['norm']
     config['learning_rate_reducer'] = config['learning_rate']
+    config['ewc'] = False
     # Get a copy of autoencoder dimensions
     dims = copy.deepcopy(config["dims"])
     cfg = copy.deepcopy(config)

@@ -83,8 +83,9 @@ class CFL:
         # Add items to summary to be used for reporting later
         self.summary.update({"recon_loss": []})
 
-    def fit(self, data_loader):
-        x = data_loader
+    def fit(self, x):
+        self.optimizer_ae.zero_grad()
+
         self.set_mode(mode="training") 
         
         Xorig = self.process_batch(x, x)
@@ -98,7 +99,10 @@ class CFL:
 
         # 0 - Update Autoencoder
         tloss, closs, rloss, zloss = self.calculate_loss(x_tilde_list, Xorig) 
-        self.optimizer_ae.zero_grad()
+        
+
+        if self.options['ewc'] :
+            tloss += self.set_ewc_loss()
 
         tloss.backward()
 
@@ -406,3 +410,27 @@ class CFL:
 
         # return data
         return data.to(self.device).float()
+
+    def set_ewc_loss(self):
+        loss = 0
+        for param, fisher, old_param in zip(self.encoder.parameters(), self.fisher_matrix, self.old_params):
+            loss += th.sum(fisher * (param - old_param).pow(2))
+        return self.lambda_ewc * loss
+
+    # Compute Fisher Information Matrix
+    def set_fisher_information(self, data_loader):
+        self.old_params = [param.clone() for param in self.encoder.parameters()]
+        fisher_matrix = []
+        for param in self.encoder.parameters():
+            fisher_matrix.append(th.zeros_like(param))
+
+        for data, _ in data_loader:
+            _, _, _, _ = self.fit(data)
+
+            for i, param in enumerate(self.encoder.parameters()):
+                fisher_matrix[i] += param.grad.pow(2)
+
+        fisher_matrix = [fisher / len(data_loader) for fisher in fisher_matrix]
+        self.fisher_matrix = fisher_matrix
+        
+        self.lambda_ewc = 0.1

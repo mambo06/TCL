@@ -36,16 +36,7 @@ from .regression import regressions  as rgs
 
 
 def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y_val, description="Logistic Reg."):
-    """Evaluates representations using Logistic Regression model.
-    Args:
-        config (dict): Dictionary that defines options to use
-        z_train (numpy.ndarray): Embeddings to be used when plotting clusters for training set
-        y_train (list): Class labels for training set
-        z_test (numpy.ndarray): Embeddings to be used when plotting clusters for test set
-        y_test (list): Class labels for test set
-        description (str): Used to print out useful description during evaluation
 
-    """
     results_list = []
     
     # Print out a useful description
@@ -62,7 +53,7 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
     regularisation_list = range(90,110,5)
     # regularisation_list = [1]
 
-    param_grid = {"max_depth":    [ 8,10,],
+    param_grid = {"max_depth":    [ 10,8],
               "n_estimators": [900, 1000],
               "learning_rate": [0.01, 0.015]}
 
@@ -95,18 +86,18 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             #   "n_estimators": [ 1000,],
             #   "learning_rate": [0.015]}
 
-            clf = xgb.XGBRegressor(eval_metric='rmse')
-            search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
-            print("The best hyperparameters are ",search.best_params_)
+            # clf = xgb.XGBRegressor(eval_metric='rmse')
+            # search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
+            # print("The best hyperparameters are ",search.best_params_)
 
-            clf = xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
-                           n_estimators  = search.best_params_["n_estimators"],
-                           max_depth     = search.best_params_["max_depth"],
-                           eval_metric='rmse')
-            # clf = xgb.XGBRegressor(learning_rate = param_grid["learning_rate"][-1],
-            #                n_estimators  = param_grid["n_estimators"][-1],
-            #                max_depth     = param_grid["max_depth"][-1],
+            # clf = xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
+            #                n_estimators  = search.best_params_["n_estimators"],
+            #                max_depth     = search.best_params_["max_depth"],
             #                eval_metric='rmse')
+            clf = xgb.XGBRegressor(learning_rate = param_grid["learning_rate"][-1],
+                           n_estimators  = param_grid["n_estimators"][-1],
+                           max_depth     = param_grid["max_depth"][-1],
+                           eval_metric='rmse')
             # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
             # end xgboost
 
@@ -148,36 +139,36 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             #                      "val_acc": score['val']})
 
         else:
-            clf = LogisticRegression( solver='lbfgs', C=c, multi_class='multinomial', max_iter=2000,)
+            # clf = LogisticRegression( solver='lbfgs', C=100, multi_class='multinomial', max_iter=2000,)
             # clf = DecisionTreeClassifier(random_state=0,criterion='entropy',)
-            # clf = RandomForestClassifier(criterion='log_loss', n_estimators=c, )
+            # clf = RandomForestClassifier(criterion='log_loss', n_estimators=500, )
             # clf = Perceptron(tol=1e-3, random_state=0)        
             # clf = SVC(C=c) 
             # clf = LinearSVC(C=c)
             # Fit model to the data
             # clf = KNeighborsClassifier(n_neighbors=c)
 
-            clf = xgb.XGBClassifier()
-            # param_grid = {"max_depth":    [8],
-            #       "n_estimators": [ 1000],
-            #       "learning_rate": [0.015]}
-            search = GridSearchCV(clf, param_grid, cv=2,verbose=2, n_jobs=-1).fit(z_train, y_train)
-            print("The best hyperparameters are ",search.best_params_)
+            # clf = xgb.XGBClassifier()
+            # # param_grid = {"max_depth":    [8],
+            # #       "n_estimators": [ 1000],
+            # #       "learning_rate": [0.015]}
+            # search = GridSearchCV(clf, param_grid, cv=2,verbose=2, n_jobs=-1).fit(z_train, y_train)
+            # print("The best hyperparameters are ",search.best_params_)
 
-            clf = xgb.XGBClassifier(learning_rate = search.best_params_["learning_rate"],
-                           n_estimators  = search.best_params_["n_estimators"],
-                           max_depth     = search.best_params_["max_depth"],
-                           eval_metric='logloss')
-            # clf = xgb.XGBClassifier(learning_rate = param_grid["learning_rate"][-1],
-            #                n_estimators  = param_grid["n_estimators"][-1],
-            #                max_depth     = param_grid["max_depth"][-1],
-            #                eval_metric='mlogloss',
-            #                # early_stopping_rounds = 10,
-            #                verbosity = 2)
+            # clf = xgb.XGBClassifier(learning_rate = search.best_params_["learning_rate"],
+            #                n_estimators  = search.best_params_["n_estimators"],
+            #                max_depth     = search.best_params_["max_depth"],
+            #                eval_metric='logloss')
+            clf = xgb.XGBClassifier(learning_rate = param_grid["learning_rate"][-1],
+                           n_estimators  = param_grid["n_estimators"][-1],
+                           max_depth     = param_grid["max_depth"][-1],
+                           # eval_metric='mlogloss',
+                           # early_stopping_rounds = 10,
+                           verbosity = 2)
 
 
-            # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
-            clf.fit(z_train, y_train)
+            clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
+            # clf.fit(z_train, y_train)
         
             y_hat_train = clf.predict(z_train)
             y_hat_test = clf.predict(z_test)

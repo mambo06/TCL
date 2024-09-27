@@ -18,7 +18,7 @@ from utils.utils import set_dirs, run_with_profiler, update_config_with_model_di
 
 
 def eval(data_loader, config):
-    config["add_noise"] = True
+    config["add_noise"] = False
     model = CFL(config)
     # Load the model
     model.load_models()
@@ -61,20 +61,32 @@ def evalulate_models(data_loader, model, config, plot_suffix="_Test", mode='trai
     #data loader support data drop
     if  mode == 'train':
         data_loader_tr_or_te = data_loader.train_loader 
+        # retrain
+        print('Prepare for retrain.......!')
+        model.set_fisher_information(data_loader_tr_or_te)
+        model.set_ewc_loss()
+        model.options['ewc'] = True
     else :
         data_loader_tr_or_te = data_loader.test_loader
-        data_loader_ve = data_loader.validation_loader     
+        data_loader_ve = data_loader.validation_loader
+        print('Retrain with Validation.........!')
+        # retrain model
+        for g in range(0):
+            train_tqdm = tqdm(enumerate(data_loader_ve), total=len(data_loader_ve), leave=True)
+            for i, (x, label) in train_tqdm:
+                model.fit(x)
+        print('Done retrain.........!')
+        print('Retrain with test.........!')
+        # retrain model
+        for g in range(15):
+            train_tqdm = tqdm(enumerate(data_loader_tr_or_te), total=len(data_loader_tr_or_te), leave=True)
+            for i, (x, label) in train_tqdm:
+                model.fit(x)
+        print('Done retrain.........!')
+     
 
     z_l, clabels_l = [], []
-
-    if  mode != 'train':
-        print('Retrain with test')
-        train_tqdm = tqdm(enumerate(data_loader_tr_or_te), total=len(data_loader_tr_or_te), leave=True)
-        # total_batches = len(data_loader_tr_or_te)
-        # retrain model
-        for i, (x, label) in train_tqdm:
-            model.fit(x)
-
+        
     train_tqdm = tqdm(enumerate(data_loader_tr_or_te), total=len(data_loader_tr_or_te), leave=True)
     for i, (x, label) in train_tqdm:
 
