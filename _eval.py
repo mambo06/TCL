@@ -34,33 +34,11 @@ def eval(data_loader, config):
 
     
     # Evaluate Autoencoder
-    with th.no_grad():          
-        if config['local']:  
-            # evaluate original
-            print(f" Evaluate Original dataset")
-            # Get the joint embeddings and class labels of training set
-            # z_train, y_train = evalulate_original(data_loader, config, plot_suffix="training", mode="train")
-            
-            z_train,  y_train = evalulate_original(data_loader, config, plot_suffix="train", mode="train", z_train=None, y_train=None)
-            evalulate_original(data_loader, config, plot_suffix="test", mode="test", z_train=z_train, y_train=y_train)
-
-            # End of the run
-            print(f"Evaluation results are saved under ./results/{config['framework']}/evaluation/\n")
-            print(f"{100 * '='}\n")
-
-            # If mlflow==True, track results
-            # if config["mlflow"]:
-            #     # Log model and results with mlflow
-            #     mlflow.log_artifacts(model._results_path + "/evaluation/" + "/clusters", "evaluation")
-
-        if config['baseGlobal'] : sys.exit()
+    with th.no_grad():
 
         print(f" Evaluate embeddings dataset")
-        # Get the joint embeddings and class labels of training set
-        # z_train, y_train = evalulate_models(data_loader, model, config, plot_suffix="training", mode="train")
         
         z_train,  y_train = evalulate_models(data_loader, model, config, plot_suffix="test", mode="train", z_train=None, y_train=None)
-        # model.options["add_noise"] = False
 
         evalulate_models(data_loader, model, config, plot_suffix="test", mode="test", z_train=z_train, y_train=y_train)
         
@@ -68,31 +46,8 @@ def eval(data_loader, config):
         print(f"Evaluation results are saved under ./results/{config['framework']}/evaluation/\n")
         print(f"{100 * '='}\n")
 
-        # If mlflow==True, track results
-        # # if config["mlflow"]:
-        #     # Log model and results with mlflow
-        #     mlflow.log_artifacts(model._results_path + "/evaluation/" + "/clusters", "evaluation")
-
 
 def evalulate_models(data_loader, model, config, plot_suffix="_Test", mode='train', z_train=None, y_train=None, nData=None):
-    """Evaluates representations using linear model, and visualisation of clusters using t-SNE and PCA on embeddings.
-
-    Args:
-        data_loader (IterableDataset): Pytorch data loader.
-        model (object): Class that contains the encoder and associated methods
-        config (dict): Dictionary containing options and arguments.
-        plot_suffix (str): Suffix to be used when saving plots
-        mode (str): Defines whether to evaluate the model on training set, or test set.
-        z_train (ndarray): Optional numpy array holding latent representations of training set
-        y_train (list): Optional list holding labels of training set
-
-    Returns:
-        (tuple): tuple containing:
-            z_train (numpy.ndarray): Numpy array holding latent representations of data set
-            y_train (list): List holding labels of data set
-
-    """
-    # A small function to print a line break on the command line.
     break_line = lambda sym: f"{100 * sym}\n{100 * sym}\n"
     
     # Print whether we are evaluating training set, or test set
@@ -108,13 +63,6 @@ def evalulate_models(data_loader, model, config, plot_suffix="_Test", mode='trai
     encoder.to(config["device"])
     # Set the model to evaluation mode
     encoder.eval()
-
-    # Choose either training, or test data loader    
-    # if nData != None:
-    #     data_loader_tr_or_te = data_loader.train_loader if mode == 'train' else data_loader.test_loader
-    # else:
-    #     # data_loader_tr_or_te = data_loader.train_loader if mode == 'train' else data_loader.test_loader    #swap fro FL
-    #     data_loader_tr_or_te = data_loader.train_loader if mode == 'train' else data_loader.validation_loader
 
     #data loader support data drop
     if  mode == 'train':

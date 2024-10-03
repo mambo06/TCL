@@ -14,7 +14,7 @@ from utils.eval_utils import linear_model_eval, plot_clusters, append_tensors_to
 from utils.load_data import Loader
 from utils.utils import set_dirs, run_with_profiler, update_config_with_model_dims
 
-# torch.manual_seed(1)
+torch.manual_seed(1)
 
 
 def eval(data_loader, config):
@@ -23,13 +23,14 @@ def eval(data_loader, config):
     # model.options['masking_ratio  '] = [0.5,0.5] 
     # Load the model
     model.load_models()
-    print(f" Evaluate embeddings without retrain")
-    model.options['add_noise'] = False
-    z_train,  y_train = evalulate_models(data_loader, model, config, plot_suffix="train", mode="train", z_train=None, y_train=None)
-
-    evalulate_models(data_loader, model, config, plot_suffix="test", mode="test", z_train=z_train, y_train=y_train)
-    print(f"Evaluation results are saved under ./results/{config['framework']}/evaluation/\n")
-    print(f"{100 * '='}\n")
+    with th.no_grad():
+        print(f" Evaluate embeddings dataset")       
+        z_train,  y_train = evalulate_models(data_loader, model, config, plot_suffix="test", mode="train", z_train=None, y_train=None)
+        evalulate_models(data_loader, model, config, plot_suffix="test", mode="test", z_train=z_train, y_train=y_train)
+        
+        # End of the run
+        print(f"Evaluation results are saved under ./results/{config['framework']}/evaluation/\n")
+        print(f"{100 * '='}\n")
 
     # Retrain model
     retrain_models(model,data_loader)
