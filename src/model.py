@@ -16,6 +16,7 @@ from utils.utils import set_seed, set_dirs
 
 th.autograd.set_detect_anomaly(True)
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+import sys
 
 import random
 
@@ -59,6 +60,9 @@ class CFL:
                      "tloss_o": []}
         self.val_loss = []
         self.train_tqdm = None
+        self.fisher_dict = {}
+        self.optpar_dict = {}
+        self.ewc_lambda = 0.4
 
     def get_loss(self):
         return self.loss
@@ -84,6 +88,7 @@ class CFL:
         self.summary.update({"recon_loss": []})
 
     def fit(self, x):
+        self.encoder.train()
         self.optimizer_ae.zero_grad()
 
         self.set_mode(mode="training") 
@@ -99,11 +104,15 @@ class CFL:
 
         # 0 - Update Autoencoder
         tloss, closs, rloss, zloss = self.calculate_loss(x_tilde_list, Xorig) 
-        
 
         if self.options['ewc'] :
-            tloss += self.set_ewc_loss()
-
+            ### magic here! :-)
+            # print(self.fisher_dict)
+            for name, param in self.encoder.named_parameters():
+                fisher = self.fisher_dict[name]
+                optpar = self.optpar_dict[name]
+                tloss += (fisher * (optpar - param).pow(2)).sum() * self.ewc_lambda
+            
         tloss.backward()
 
         self.optimizer_ae.step()
@@ -130,7 +139,8 @@ class CFL:
         # xi = xi[0] # single partition
         # print(xi.shape)
         total_loss, contrastive_loss, recon_loss, zrecon_loss = [], [], [], []
-
+        total_loss, contrastive_loss, recon_loss, zrecon_loss = 0, 0, 0, 0
+        n=0
         # pass data through model
         for xi in x_tilde_list:
             # If we are using combination of subsets use xi since it is already a concatenation of two subsets. 
@@ -145,17 +155,23 @@ class CFL:
             # Compute losses
             tloss, closs, rloss, zloss = self.joint_loss(z, Xrecon, Xorig) # normalized encoded, decoded, origin
             # Accumulate losses
-            total_loss.append(tloss)
-            contrastive_loss.append(closs)
-            recon_loss.append(rloss)
-            zrecon_loss.append(zloss)
+            total_loss += tloss
+            contrastive_loss += closs
+            recon_loss += rloss
+            zrecon_loss += zloss
+            n += 1
+
+            # total_loss.append(tloss)
+            # contrastive_loss.append(closs)
+            # recon_loss.append(rloss)
+            # zrecon_loss.append(zloss)
 
         # Compute the average of losses
-        n = len(total_loss)
-        total_loss = sum(total_loss) / n
-        contrastive_loss = sum(contrastive_loss) / n
-        recon_loss = sum(recon_loss) / n
-        zrecon_loss = sum(zrecon_loss) / n
+        # n = len(total_loss)
+        total_loss = total_loss / n
+        contrastive_loss = contrastive_loss / n
+        recon_loss = recon_loss / n
+        zrecon_loss = zrecon_loss/ n
 
         return total_loss, contrastive_loss, recon_loss, zrecon_loss
         # print(tloss, closs, rloss, zloss) = tensor(59.7908, grad_fn=<AddBackward0>) tensor(4.1386, grad_fn=<DivBackward0>) tensor(55.6447, grad_fn=<DivBackward0>) tensor(0.0075, grad_fn=<DivBackward0>)
@@ -346,7 +362,6 @@ class CFL:
         """Used to load weights saved at the end of the training."""
         for model_name in self.model_dict:
             model = th.load(self._model_path + "/" + model_name + "_"+ prefix + ".pt", map_location=self.device)
-            setattr(self, model_name, model.eval())
             print(f"--{model_name} is loaded")
         print("Done with loading models.")
 
@@ -411,26 +426,16 @@ class CFL:
         # return data
         return data.to(self.device).float()
 
-    def set_ewc_loss(self):
-        loss = 0
-        for param, fisher, old_param in zip(self.encoder.parameters(), self.fisher_matrix, self.old_params):
-            loss += th.sum(fisher * (param - old_param).pow(2))
-        return self.lambda_ewc * loss
+# https://github.com/ContinualAI/colab/blob/master/notebooks/intro_to_continual_learning.ipynb?short_path=b5af5b8
 
-    # Compute Fisher Information Matrix
-    def set_fisher_information(self, data_loader):
-        self.old_params = [param.clone() for param in self.encoder.parameters()]
-        fisher_matrix = []
-        for param in self.encoder.parameters():
-            fisher_matrix.append(th.zeros_like(param))
-
+    def on_task_update(self,data_loader):
         for data, _ in data_loader:
             _, _, _, _ = self.fit(data)
 
-            for i, param in enumerate(self.encoder.parameters()):
-                fisher_matrix[i] += param.grad.pow(2)
+        self.fisher_dict = {}
+        self.optpar_dict = {}
 
-        fisher_matrix = [fisher / len(data_loader) for fisher in fisher_matrix]
-        self.fisher_matrix = fisher_matrix
-        
-        self.lambda_ewc = 0.1
+        # gradients accumulated can be used to calculate fisher
+        for name, param in self.encoder.named_parameters():
+            self.optpar_dict[name] = param.data.clone()
+            self.fisher_dict[name] = param.grad.data.clone()

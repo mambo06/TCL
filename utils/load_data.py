@@ -200,7 +200,7 @@ class TabularDataset(Dataset):
         # dirs = []
         dataset_name = self.config['dataset']
 
-        dir_ = 'data/'+ dataset_name 
+        dir_ = 'data/'+ dataset_name  # + '/normal'
         if self.config['dataset'] in dirs : # if from other paper, datra not normalized
             # norm = 'l2' # overide for test
             N_train, N_test,N_val, y_train, y_test,y_val = self.joinData(cat_policy=self.config['cat_policy'],normalization=True, norm=self.config['norm'])

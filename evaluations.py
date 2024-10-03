@@ -25,9 +25,9 @@ from pathlib import Path
 
 def main(config):
     # Disable adding noise since we are in evaluation mode
-    config["add_noise"] = False
+    # config["add_noise"] = False
     # Turn off valiation
-    config["validate"] = False
+    # config["validate"] = False
     eval.main(config)
 
 if __name__ == "__main__":

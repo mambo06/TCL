@@ -98,12 +98,6 @@ def run(config, save_weights=True):
 
             epoch_loss.append(tloss.item())
             
-            # model.optimizer_ae.zero_grad()
-
-            # tloss.backward()
-
-            # model.optimizer_ae.step()
-            
             if i == total-1 :
                 description = 'tloss {0:.2f} closs {1:.2f} rloss {2:.2f} zloss {3:.2f}'.format(np.mean(model.loss["tloss_b"]),
                     np.mean(model.loss["closs_b"]),
@@ -301,6 +295,7 @@ def run(config, save_weights=True):
 
     with open(model._results_path + "/config_"+ prefix +".yml", 'w') as config_file:
         yaml.dump(config, config_file, default_flow_style=False)
+    # model.on_task_update(data)
 
         
 

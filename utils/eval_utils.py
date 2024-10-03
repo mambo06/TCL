@@ -73,7 +73,7 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
         # Initialize Logistic regression
         print(10 * "*" + "parameters=" + str(c) + 10 * "*")
         if config['task_type'] == 'regression':
-            # clf = LinearRegression()
+            clf = LinearRegression()
             # clf = SVR()
             # clf = ElasticNet(alpha=c)
             # clf = KNeighborsRegressor(n_neighbors = c, )
@@ -86,19 +86,19 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             #   "n_estimators": [ 1000,],
             #   "learning_rate": [0.015]}
 
-            # clf = xgb.XGBRegressor(eval_metric='rmse')
-            # search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
-            # print("The best hyperparameters are ",search.best_params_)
+            clf = xgb.XGBRegressor(eval_metric='rmse')
+            search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
+            print("The best hyperparameters are ",search.best_params_)
 
-            # clf = xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
-            #                n_estimators  = search.best_params_["n_estimators"],
-            #                max_depth     = search.best_params_["max_depth"],
-            #                eval_metric='rmse')
-            clf = xgb.XGBRegressor(learning_rate = param_grid["learning_rate"][-1],
-                           n_estimators  = param_grid["n_estimators"][-1],
-                           max_depth     = param_grid["max_depth"][-1],
+            clf = xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
+                           n_estimators  = search.best_params_["n_estimators"],
+                           max_depth     = search.best_params_["max_depth"],
                            eval_metric='rmse')
-            # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
+            # clf = xgb.XGBRegressor(learning_rate = param_grid["learning_rate"][-1],
+            #                n_estimators  = param_grid["n_estimators"][-1],
+            #                max_depth     = param_grid["max_depth"][-1],
+            #                eval_metric='rmse')
+            clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
             # end xgboost
 
             clf.fit(z_train, y_train)
@@ -167,8 +167,8 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
                            verbosity = 2)
 
 
-            clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
-            # clf.fit(z_train, y_train)
+            # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
+            clf.fit(z_train, y_train)
         
             y_hat_train = clf.predict(z_train)
             y_hat_test = clf.predict(z_test)
