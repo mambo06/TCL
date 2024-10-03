@@ -102,6 +102,14 @@ class CFL:
 
         # 0 - Update Autoencoder
         tloss, closs, rloss, zloss = self.calculate_loss(x_tilde_list, Xorig) 
+        if self.options['ewc'] :
+            ### magic here! :-)
+            # print(self.fisher_dict)
+            for name, param in self.encoder.named_parameters():
+                fisher = self.fisher_dict[name]
+                optpar = self.optpar_dict[name]
+                tloss += (fisher * (optpar - param).pow(2)).sum() * self.ewc_lambda
+                    
         self.optimizer_ae.zero_grad()
 
         tloss.backward()
@@ -144,13 +152,6 @@ class CFL:
             Xorig = Xinput if self.options["reconstruction"] and self.options["reconstruct_subset"] else Xorig
             # Compute losses
             tloss, closs, rloss, zloss = self.joint_loss(z, Xrecon, Xorig) # normalized encoded, decoded, origin
-            if self.options['ewc'] :
-            ### magic here! :-)
-            # print(self.fisher_dict)
-                for name, param in self.encoder.named_parameters():
-                    fisher = self.fisher_dict[name]
-                    optpar = self.optpar_dict[name]
-                    tloss += (fisher * (optpar - param).pow(2)).sum() * self.ewc_lambda
             # Accumulate losses
             total_loss.append(tloss)
             contrastive_loss.append(closs)
