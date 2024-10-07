@@ -14,11 +14,11 @@ from utils.model_plot import save_loss_plot
 from utils.model_utils import AEWrapper
 from utils.utils import set_seed, set_dirs
 
-th.autograd.set_detect_anomaly(True)
+# th.autograd.set_detect_anomaly(True)
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 import random
-
+import sys
 
 class CFL:
 
@@ -62,7 +62,8 @@ class CFL:
         self.options['ewc'] = False
         self.fisher_dict = {}
         self.optpar_dict = {}
-        self.ewc_lambda = 0.4
+        self.ewc_lambda = 0.01
+        # self.set_mode(mode="training")
 
     def get_loss(self):
         return self.loss
@@ -86,10 +87,15 @@ class CFL:
         self.optimizer_ae = self._adam(parameters, lr=self.options["learning_rate"])
         # Add items to summary to be used for reporting later
         self.summary.update({"recon_loss": []})
+    def set_autoencoder_retrain(self):
+        parameters = [model.parameters() for _, model in self.model_dict.items()]
+        # print(parameters)
+        self.optimizer_ae = self._adam(parameters, lr=self.options["learning_rate"])
+        # sys.exit(0)
 
     def fit(self, data_loader):
         x = data_loader
-        self.set_mode(mode="training") 
+        # self.set_mode(mode="training") 
         
         Xorig = self.process_batch(x, x)
 
@@ -108,13 +114,15 @@ class CFL:
             for name, param in self.encoder.named_parameters():
                 fisher = self.fisher_dict[name]
                 optpar = self.optpar_dict[name]
+                # print((optpar != param).sum())
                 tloss += (fisher * (optpar - param).pow(2)).sum() * self.ewc_lambda
-                    
-        self.optimizer_ae.zero_grad()
 
-        tloss.backward()
+        
+        self.update_autoencoder(tloss)
+        # tloss.backward()
 
-        self.optimizer_ae.step()
+        # self.optimizer_ae.step()
+        # self.optimizer_ae.zero_grad()
 
         return tloss, closs, rloss, zloss
 
@@ -169,10 +177,9 @@ class CFL:
         # print(tloss, closs, rloss, zloss) = tensor(59.7908, grad_fn=<AddBackward0>) tensor(4.1386, grad_fn=<DivBackward0>) tensor(55.6447, grad_fn=<DivBackward0>) tensor(0.0075, grad_fn=<DivBackward0>)
 
 
-    def update_autoencoder(self, tloss, retain_graph=True): # 6 torch.Size([64, 343]) original mixed 2 partitions, torch.Size([64, 784]) original data stacked
-
-    
+    def update_autoencoder(self, tloss, retain_graph=True):
         self._update_model(tloss, self.optimizer_ae, retain_graph=retain_graph)
+
 
 
     def get_combinations_of_subsets(self, x_tilde_list):
@@ -329,8 +336,9 @@ class CFL:
 
     def set_mode(self, mode="training"):
         """Sets the mode of the models, either as .train(), or .eval()"""
-        for _, model in self.model_dict.items():
+        for model_name, model in self.model_dict.items():
             model.train() if mode == "training" else model.eval()
+            # print(model_name,model.training)
 
     def save_weights(self):
         config = self.options
@@ -341,21 +349,26 @@ class CFL:
 
         """Used to save weights."""
         for model_name in self.model_dict:
-            th.save(self.model_dict[model_name], self._model_path + "/" + model_name + "_"+ prefix + ".pt")
+            # th.save(self.model_dict[model_name], self._model_path + "/" + model_name + "_"+ prefix + ".pt")
+            th.save(self.model_dict[model_name].state_dict(), self._model_path + "/" + model_name + "_"+ prefix + ".pt")
         print("Done with saving models.")
 
     def load_models(self):
         config = self.options
-
         prefix = str(config['epochs']) + "e-" + str(config["dataset"])
-
-        
+        model = th.load(self._model_path + "/" + 'encoder' + "_"+ prefix + ".pt", map_location=self.device)
+        self.encoder.load_state_dict(model)
+        # self.encoder =  model
+        # self.encoder.train()
+        # print(self.encoder.state_dict())
+        # sys.exit(0)
 
         """Used to load weights saved at the end of the training."""
-        for model_name in self.model_dict:
-            model = th.load(self._model_path + "/" + model_name + "_"+ prefix + ".pt", map_location=self.device)
-            setattr(self, model_name, model.eval())
-            print(f"--{model_name} is loaded")
+        # for model_name in self.model_dict:
+        #     model = th.load(self._model_path + "/" + model_name + "_"+ prefix + ".pt", map_location=self.device)
+        #     # setattr(self, model_name, model.eval())
+        #     setattr(self, model_name, model)
+            # print(f"--{model_name} is loaded, {model.encoder.training}")
         print("Done with loading models.")
 
     def print_model_summary(self):
@@ -368,20 +381,12 @@ class CFL:
         print(description)
 
     def _update_model(self, loss, optimizer, retain_graph=True):
-        """Does backprop, and updates the model parameters
-
-        Args:
-            loss (): Loss containing computational graph
-            optimizer (torch.optim): Optimizer used during training
-            retain_graph (bool): If True, retains graph. Otherwise, it does not.
-
-        """
-        # Reset optimizer
         optimizer.zero_grad()
-        # Backward propagation to compute gradients
         loss.backward(retain_graph=retain_graph)
-        # Update weights
         optimizer.step()
+        # print(optimizer.state_dict())
+        # print(self. encoder.state_dict())
+        # sys.exit(0)
 
     def _set_scheduler(self):
         """Sets a scheduler for learning rate of autoencoder"""

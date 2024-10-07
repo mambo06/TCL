@@ -30,7 +30,8 @@ def eval(data_loader, config):
     model = CFL(config)
     # Load the model
     model.load_models()
-    # model.options["add_noise"] = True
+    model.encoder.eval()
+    model.options["add_noise"] = False
 
     
     # Evaluate Autoencoder

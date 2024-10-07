@@ -35,17 +35,11 @@ from .regression import regressions  as rgs
 
 
 
-def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y_val, description="Logistic Reg."):
-    """Evaluates representations using Logistic Regression model.
-    Args:
-        config (dict): Dictionary that defines options to use
-        z_train (numpy.ndarray): Embeddings to be used when plotting clusters for training set
-        y_train (list): Class labels for training set
-        z_test (numpy.ndarray): Embeddings to be used when plotting clusters for test set
-        y_test (list): Class labels for test set
-        description (str): Used to print out useful description during evaluation
+def linear_model_eval(config, z_train, y_train, suffix , 
+    z_test, y_test,z_val, y_val, 
+    description="Logistic Reg.",
+    models=None):
 
-    """
     results_list = []
     
     # Print out a useful description
@@ -91,26 +85,28 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             # clf = RandomForestRegressor(max_depth=c)
 
             # start xgboost
-            # param_grid = {"max_depth": [ 8],
-            #   "n_estimators": [ 1000,],
-            #   "learning_rate": [0.015]}
+            param_grid = {"max_depth": [ 8],
+              "n_estimators": [ 1000,],
+              "learning_rate": [0.015]}
 
-            clf = xgb.XGBRegressor(eval_metric='rmse')
-            search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
-            print("The best hyperparameters are ",search.best_params_)
+            # clf = xgb.XGBRegressor(eval_metric='rmse')
+            # search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
+            # print("The best hyperparameters are ",search.best_params_)
 
-            clf = xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
-                           n_estimators  = search.best_params_["n_estimators"],
-                           max_depth     = search.best_params_["max_depth"],
-                           eval_metric='rmse')
-            # clf = xgb.XGBRegressor(learning_rate = param_grid["learning_rate"][-1],
-            #                n_estimators  = param_grid["n_estimators"][-1],
-            #                max_depth     = param_grid["max_depth"][-1],
+            # clf = xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
+            #                n_estimators  = search.best_params_["n_estimators"],
+            #                max_depth     = search.best_params_["max_depth"],
             #                eval_metric='rmse')
+            clf = xgb.XGBRegressor(learning_rate = param_grid["learning_rate"][-1],
+                           n_estimators  = param_grid["n_estimators"][-1],
+                           max_depth     = param_grid["max_depth"][-1],
+                           # eval_metric='rmse'
+                           )
             # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
             # end xgboost
 
-            clf.fit(z_train, y_train)
+            if models==None : clf.fit(z_train, y_train)
+            else: clf.fit(z_test, y_test, eval_set=[(z_val, y_val)], xgb_model=models, verbose=0)
 
             #  # Score for training set
             # tr_acc = clf.score(z_train, y_train)
@@ -215,6 +211,8 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
         dict_writer.writerows(results_list)
         print(f"{100 * '='}\n")
         print(f"Training results are saved at: {file_path}")
+
+    if models==None: return clf
 
 
 def plot_clusters(config, z, clabels, suffix , plot_suffix="_inLatentSpace"):

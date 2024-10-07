@@ -50,6 +50,7 @@ def run(config, save_weights=True):
    
     model = CFL(config)
     data = Loader(config, dataset_name=config["dataset"]).train_loader
+
     data_val = Loader(config, dataset_name=config["dataset"]).validation_loader
 
     data_test = Loader(config, dataset_name=config["dataset"]).test_loader
@@ -73,6 +74,7 @@ def run(config, save_weights=True):
     
     start0 = True
     total=len(data)
+    
     for epoch in range(config["epochs"]):
         epoch_loss = []
         # start = time.process_time()
@@ -282,18 +284,53 @@ def run(config, save_weights=True):
 
         # training_time = time.process_time() - start
 
-    start1 = time.process_time()
-    print("Total Training Time :", start1 - start0)
+    # print('test')
+    # for epoch in range(config["epochs"]):
+    #     epoch_loss = []
+    #     # start = time.process_time()
+    #     total = len(data_test)
+    #     tqdm_bar = tqdm(enumerate(data_test), 
+    #         total=total, 
+    #         leave=True, 
+    #         desc = 'Training on test: ' + str(epoch))
 
-    # if best_epoch < 15 :
+    #     # tqdm_bar = tqdm(range(len(data)), desc = 'Training on epoch: ' + str(epoch))
+    #     if start0 == True : start0 = time.process_time()
+    #     for i, (x, _) in tqdm_bar:
+    #     # for i in tqdm_bar:
 
-    #     _ = model.save_weights() if save_weights else None
+    #         # x,y = next(islice(data, i, None))
 
-    #     # Save the config file to keep a record of the settings
-    #     prefix = str(config['epochs']) + "e-" + str(config["dataset"])
+    #         tloss, closs, rloss, zloss = model.fit(x)
 
-    #     with open(model._results_path + "/config_"+ prefix +".yml", 'w') as config_file:
-    #         yaml.dump(config, config_file, default_flow_style=False)
+    #         model.loss["tloss_o"].append(tloss.item())
+    #         model.loss["tloss_b"].append(tloss.item())
+    #         model.loss["closs_b"].append(closs.item())
+    #         model.loss["rloss_b"].append(rloss.item())
+    #         model.loss["zloss_b"].append(zloss.item())
+
+    #         epoch_loss.append(tloss.item())
+            
+    #         # model.optimizer_ae.zero_grad()
+
+    #         # tloss.backward()
+
+    #         # model.optimizer_ae.step()
+            
+    #         if i == total-1 :
+    #             description = 'tloss {0:.2f} closs {1:.2f} rloss {2:.2f} zloss {3:.2f}'.format(np.mean(model.loss["tloss_b"]),
+    #                 np.mean(model.loss["closs_b"]),
+    #                 np.mean(model.loss["rloss_b"]),
+    #                 np.mean(model.loss["zloss_b"])
+    #                 )
+    #             tqdm_bar.set_description(description)
+
+    #     epoch_loss = np.mean(epoch_loss)
+
+    # start1 = time.process_time()
+    # print("Total Training Time :", start1 - start0)
+
+   
     _ = model.save_weights() if save_weights else None
 
     # Save the config file to keep a record of the settings

@@ -9,7 +9,7 @@ import torch
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, ConcatDataset,Subset
 from torchvision import datasets as dts
 import torchvision.transforms as transforms
 import h5py
@@ -54,6 +54,14 @@ class Loader(object):
         # Set the loader for validation set
         self.validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, drop_last=drop_last, **kwargs)
 
+        sampled_dataset = self.sample_from_dataset(train_dataset)
+
+        merged_dataset = ConcatDataset([sampled_dataset, test_dataset])
+
+        # Create a new dataloader for the merged dataset
+        self.merged_dataloader = DataLoader(merged_dataset, batch_size=batch_size, shuffle=True,drop_last=drop_last)
+
+
         
     def get_dataset(self, dataset_name, file_path):
         
@@ -68,6 +76,15 @@ class Loader(object):
         val_dataset = dataset(self.config, datadir=file_path, dataset_name=dataset_name, mode='validation')
        
         return train_dataset, test_dataset, val_dataset
+
+    def sample_from_dataset(self, dataset, sample_size=1000):
+        # Generate random indices
+        indices = torch.randperm(len(dataset))[:sample_size]
+        
+        # Create a Subset using the random indices
+        sampled_dataset = Subset(dataset, indices)
+        
+        return sampled_dataset
 
 
 class ToTensorNormalize(object):
