@@ -62,7 +62,7 @@ class CFL:
         self.options['ewc'] = False
         self.fisher_dict = {}
         self.optpar_dict = {}
-        self.ewc_lambda = 0.01
+        self.ewc_lambda = 0.1
         # self.set_mode(mode="training")
 
     def get_loss(self):

@@ -38,7 +38,8 @@ from .regression import regressions  as rgs
 def linear_model_eval(config, z_train, y_train, suffix , 
     z_test, y_test,z_val, y_val, 
     description="Logistic Reg.",
-    models=None):
+    models=None,
+    x_=None, y_=None):
 
     results_list = []
     
@@ -76,7 +77,7 @@ def linear_model_eval(config, z_train, y_train, suffix ,
         # Initialize Logistic regression
         print(10 * "*" + "parameters=" + str(c) + 10 * "*")
         if config['task_type'] == 'regression':
-            # clf = LinearRegression()
+            clf = LinearRegression()
             # clf = SVR()
             # clf = ElasticNet(alpha=c)
             # clf = KNeighborsRegressor(n_neighbors = c, )
@@ -85,11 +86,11 @@ def linear_model_eval(config, z_train, y_train, suffix ,
             # clf = RandomForestRegressor(max_depth=c)
 
             # start xgboost
-            param_grid = {"max_depth": [ 8],
-              "n_estimators": [ 1000,],
-              "learning_rate": [0.015]}
+            # param_grid = {"max_depth": [ 8],
+            #   "n_estimators": [ 1000,],
+            #   "learning_rate": [0.015]}
 
-            # clf = xgb.XGBRegressor(eval_metric='rmse')
+            clf = xgb.XGBRegressor(eval_metric='rmse')
             # search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
             # print("The best hyperparameters are ",search.best_params_)
 
@@ -100,13 +101,41 @@ def linear_model_eval(config, z_train, y_train, suffix ,
             clf = xgb.XGBRegressor(learning_rate = param_grid["learning_rate"][-1],
                            n_estimators  = param_grid["n_estimators"][-1],
                            max_depth     = param_grid["max_depth"][-1],
-                           # eval_metric='rmse'
+                           # eval_metric='rmse',
+                           # reg_alpha=1, 
+                           # reg_lambda=1,
+                           subsample=0.5, 
+                           # colsample_bytree=0.5,
                            )
             # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
             # end xgboost
 
-            if models==None : clf.fit(z_train, y_train)
-            else: clf.fit(z_test, y_test, eval_set=[(z_val, y_val)], xgb_model=models, verbose=0)
+            if models==None : 
+                # search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
+                # print("The best hyperparameters are ",search.best_params_)
+
+                # clf = xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
+                #                n_estimators  = search.best_params_["n_estimators"],
+                #                max_depth     = search.best_params_["max_depth"],
+                #                eval_metric='rmse')
+                clf.fit(z_train, y_train)
+            else: 
+                # search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(x_, y_)
+                # print("The best hyperparameters are ",search.best_params_)
+
+                # clf = xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
+                #                n_estimators  = search.best_params_["n_estimators"],
+                #                max_depth     = search.best_params_["max_depth"],
+                #                eval_metric='rmse')
+                clf.fit(x_, y_, 
+                    xgb_model=models, 
+                    verbose=0, 
+                    # eval_set=[(z_val, y_val)],
+                    # early_stopping_rounds=20,
+
+                    )
+                # clf.fit(x_, y_)
+                # z_test,y_test = x_,y_
 
             #  # Score for training set
             # tr_acc = clf.score(z_train, y_train)
@@ -117,6 +146,8 @@ def linear_model_eval(config, z_train, y_train, suffix ,
             # print(tr_acc,ve_acc,te_acc)
 
                 # Score for training set
+            # if x_ != None and y_ != None :
+            #     z_train, y_train = x_, y_
             tr_acc = np.sqrt(mean_squared_error( y_train, clf.predict(z_train))) 
 
             # # Score for test set

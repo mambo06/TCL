@@ -8,8 +8,7 @@ import pandas as pd
 import torch
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset, ConcatDataset,Subset
+from torch.utils.data import Dataset, ConcatDataset,Subset, DataLoader, random_split
 from torchvision import datasets as dts
 import torchvision.transforms as transforms
 import h5py
@@ -28,15 +27,7 @@ class Loader(object):
     """ Data loader """
 
     def __init__(self, config, dataset_name, drop_last=True, kwargs={}):
-        """Pytorch data loader
-
-        Args:
-            config (dict): Dictionary containing options and arguments.
-            dataset_name (str): Name of the dataset to load
-            drop_last (bool): True in training mode, False in evaluation.
-            kwargs (dict): Dictionary for additional parameters if needed
-
-        """
+        torch.manual_seed(100)
         # Get batch size
         batch_size = config["batch_size"]
         # Get config
@@ -54,12 +45,21 @@ class Loader(object):
         # Set the loader for validation set
         self.validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, drop_last=drop_last, **kwargs)
 
-        sampled_dataset = self.sample_from_dataset(train_dataset)
+        sampled_train_dataset = self.sample_from_dataset(train_dataset,100)
+        # sampled_test_dataset = self.sample_from_dataset(test_dataset,200)
 
-        merged_dataset = ConcatDataset([sampled_dataset, test_dataset])
+        merged_train_dataset = ConcatDataset([sampled_train_dataset, test_dataset])
+
+        trainFromTest_dataset, testFromTest_dataset = random_split(test_dataset, [0.99, 0.01])
+
 
         # Create a new dataloader for the merged dataset
-        self.merged_dataloader = DataLoader(merged_dataset, batch_size=batch_size, shuffle=True,drop_last=drop_last)
+        self.merged_train_dataloader = DataLoader(merged_train_dataset, batch_size=batch_size, shuffle=True,drop_last=True)
+
+        # self.trainFromTest_dataloader = DataLoader(ConcatDataset([trainFromTest_dataset,sampled_train_dataset]), batch_size=batch_size, shuffle=True,drop_last=False)
+        self.trainFromTest_dataloader = DataLoader(trainFromTest_dataset, batch_size=batch_size, shuffle=True,drop_last=False)
+       
+        self.testFromTest_dataloader = DataLoader(testFromTest_dataset, batch_size=batch_size, shuffle=True,drop_last=False)
 
 
         

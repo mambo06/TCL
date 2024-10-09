@@ -57,32 +57,31 @@ def retrain_models(model,data_loader):
     model.set_mode('training')
     model.options["add_noise"] = True
     data_loader_tr_or_te = data_loader.train_loader 
+    
     # retrain
     print('Prepare for retrain, calcultae fisher matrix.......!')
-    # model.set_fisher_information(data_loader_tr_or_te)
-    # model.set_ewc_loss()
     model.on_task_update(data_loader_tr_or_te)
     model.options['ewc'] = True
 
     # data_loader_tr_or_te = data_loader.test_loader
-    data_loader_tr_or_te = data_loader.merged_dataloader
-    data_loader_ve = data_loader.validation_loader
+    data_loader_tr_or_te = data_loader.merged_train_dataloader
+    # data_loader_ve = data_loader.validation_loader
 
     # parameters = [model.parameters() for _, model in model.model_dict.items()]
     # model.optimizer_ae = model._adam(parameters, lr=model.options["learning_rate"])
     model.set_autoencoder_retrain()
     # print('Opt before', model.optimizer_ae.state_dict())
 
-    print('Retrain with Validation.........!')
+    # print('Retrain with Validation.........!')
+    # # retrain model
+    # for g in range(0):
+    #     train_tqdm = tqdm(enumerate(data_loader_ve), total=len(data_loader_ve), leave=True)
+    #     for i, (x, _) in train_tqdm:
+    #         model.fit(x)
+    # print('Done retrain.........!')
+    print('Retrain with New Case.........!', model.encoder.training)
     # retrain model
-    for g in range(0):
-        train_tqdm = tqdm(enumerate(data_loader_ve), total=len(data_loader_ve), leave=True)
-        for i, (x, _) in train_tqdm:
-            model.fit(x)
-    print('Done retrain.........!')
-    print('Retrain with test.........!', model.encoder.training)
-    # retrain model
-    for g in range(35):
+    for g in range(25):
         train_tqdm = tqdm(enumerate(data_loader_tr_or_te), total=len(data_loader_tr_or_te), leave=True)
         for i, (x, _) in train_tqdm:
             model.fit(x)
@@ -100,32 +99,56 @@ def evalulate_models(data_loader, model, config, suffix="_Test", mode='train', z
     
     # Print the message         
     print(decription)
+    if mode =='train':
+        data_loader_tr = data_loader.train_loader
+        data_loader_tr_retrain = data_loader.trainFromTest_dataloader
+
+        z , clabels  = generateEncoded(data_loader_tr, model, config)
+        z_, clabels_ = generateEncoded(data_loader_tr_retrain, model, config)
+
+        return [z , clabels], [z_, clabels_]
+
+    if mode == 'test':
+        [z_train,y_train], [xFromTest,yFromTest] = z_train, y_train
+
+        data_loader_ve = data_loader.validation_loader
+        data_loader_te = data_loader.test_loader
+        data_loader_te_from_te = data_loader.testFromTest_dataloader
     
-    # Get the model
-    encoder = model.encoder
-    # Move the model to the device
-    encoder.to(config["device"])
+        z , clabels  = generateEncoded(data_loader_ve, model, config)
+        z_, clabels_ = generateEncoded(data_loader_te, model, config)
+        x_, y_      = generateEncoded(data_loader_te_from_te, model, config)
+
+        # Title of the section to print 
+        print(20 * "*" + " Running evaluation trained on the joint embeddings" \
+                       + " of training set and tested on that of test set" + 20 * "*")
+        # Description of the task (Classification scores using Logistic Regression) to print on the command line
+        description = "Sweeping models with arguments:"
+        # Evaluate the embeddings
+        suffixd= f"-{suffix}-classicalNoRetrain-"
+        modelClasical = linear_model_eval(config, z_train, y_train, suffixd, 
+        z_test=z_, y_test=clabels_, 
+        z_val=z, y_val=clabels,
+        description=description,x_=None,y_=None)
+        
+        suffixd = f"-{suffix}-classicalRetrain-"
+        linear_model_eval(config, z_train, y_train, suffixd, 
+        # z_test=z_, y_test=clabels_,  
+        z_test=x_, y_test=y_, 
+        z_val=z, y_val=clabels,
+        description=description,
+        models=modelClasical,x_=xFromTest,y_=yFromTest)
+
+def generateEncoded(dataLoader,model, config):
+   
+    model.encoder.to(config["device"])
     # Set the model to evaluation mode
-    encoder.eval()
 
-    #data loader support data drop
-    if  mode == 'train':
-        data_loader_tr_or_te = data_loader.train_loader
-        # data_loader_tr_or_te = data_loader.validation_loader
-    else :
-        data_loader_tr_or_te = data_loader.test_loader
-        data_loader_ve = data_loader.validation_loader 
-
- # Attach progress bar to data_loader to check it during training. "leave=True" gives a new line per epoch
-    train_tqdm = tqdm(enumerate(data_loader_tr_or_te), total=len(data_loader_tr_or_te), leave=True)
-
-    # Create empty lists to hold data for representations, and class labels
-    z_l, clabels_l = [], []
-
-    # Go through batches
-    total_batches = len(data_loader_tr_or_te)
+    model.encoder.eval()
+    total_batches = len(dataLoader)
+    train_tqdm = tqdm(enumerate(dataLoader), total=total_batches, leave=True)
+    z_val, clabels_val = [], []    
     for i, (x, label) in train_tqdm:
-
         x_tilde_list = model.subset_generator(x)
 
         latent_list = []
@@ -135,93 +158,23 @@ def evalulate_models(data_loader, model, config, suffix="_Test", mode='train', z
             # Turn xi to tensor, and move it to the device
             Xbatch = model._tensor(xi)
             # Extract latent
-            _, latent, _ = encoder(Xbatch) # decoded
+            _, latent, _ = model.encoder(Xbatch) # decoded
             # Collect latent
             latent_list.append(latent)
 
-            
+        
         # Aggregation of latent representations
         latent = aggregate(latent_list, config)
         # Append tensors to the corresponding lists as numpy arrays
         if config['task_type'] == 'regression':
             label = label
         else : label = label.int()
-        z_l, clabels_l = append_tensors_to_lists([z_l, clabels_l],
+        z_val, clabels_val = append_tensors_to_lists([z_val, clabels_val],
                                                  [latent, label])
 
-    # print("Turn list of numpy arrays to a single numpy array for representations.")
-    # Turn list of numpy arrays to a single numpy array for representations.
-    z = concatenate_lists([z_l])
-    # print(" Turn list of numpy arrays to a single numpy array for class labels.")
-    # Turn list of numpy arrays to a single numpy array for class labels.
-    clabels = concatenate_lists([clabels_l])
-    # print(z.shape, clabels)
-
-    # Visualise clusters
-    # if (suffix =="test"):
-        # plot_clusters(config, z, clabels, suffix="_inLatentSpace_" + suffix)
-
-    if mode == 'test':
-        train_tqdm = tqdm(enumerate(data_loader_ve), total=len(data_loader_ve), leave=True)
-
-        # Create empty lists to hold data for representations, and class labels
-        z_val, clabels_val = [], []
-
-        # Go through batches
-        total_batches = len(data_loader_ve)
-        for i, (x, label) in train_tqdm:
-            x_tilde_list = model.subset_generator(x)
-
-            latent_list = []
-
-            # Extract embeddings (i.e. latent) for each subset
-            for xi in x_tilde_list:
-                # Turn xi to tensor, and move it to the device
-                Xbatch = model._tensor(xi)
-                # Extract latent
-                _, latent, _ = encoder(Xbatch) # decoded
-                # Collect latent
-                latent_list.append(latent)
-
-            
-            # Aggregation of latent representations
-            latent = aggregate(latent_list, config)
-            # Append tensors to the corresponding lists as numpy arrays
-            if config['task_type'] == 'regression':
-                label = label
-            else : label = label.int()
-            z_val, clabels_val = append_tensors_to_lists([z_val, clabels_val],
-                                                     [latent, label])
-
-        # print("Turn list of numpy arrays to a single numpy array for representations.")
-        # Turn list of numpy arrays to a single numpy array for representations.
-        z_ = concatenate_lists([z_val])
-        # print(" Turn list of numpy arrays to a single numpy array for class labels.")
-        # Turn list of numpy arrays to a single numpy array for class labels.
-        clabels_ = concatenate_lists([clabels_val])
-
-
-        # Title of the section to print 
-        print(20 * "*" + " Running evaluation trained on the joint embeddings" \
-                       + " of training set and tested on that of test set" + 20 * "*")
-        # Description of the task (Classification scores using Logistic Regression) to print on the command line
-        description = "Sweeping models with arguments:"
-        # Evaluate the embeddings
-        suffixd= f"-{suffix}-classicalNoRetrain-"
-        modelClasical = linear_model_eval(config, z_train, y_train, suffixd + "-contrastive-", 
-        z_test=z, y_test=clabels, 
-        z_val=z_, y_val=clabels_,
-        description=description)
-        suffixd = f"-{suffix}-classicalRetrain-"
-        linear_model_eval(config, z_train, y_train, suffixd + "-contrastive-", 
-        z_test=z, y_test=clabels, 
-        z_val=z_, y_val=clabels_,
-        description=description,
-        models=modelClasical)
-    else:
-        # Return z_train = z, and y_train = clabels
-        return z, clabels
-
+    z = concatenate_lists([z_val])
+    clabels = concatenate_lists([clabels_val])
+    return z, clabels
 
 def main(config):
     """Main function for evaluation
