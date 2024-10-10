@@ -62,7 +62,7 @@ class CFL:
         self.options['ewc'] = False
         self.fisher_dict = {}
         self.optpar_dict = {}
-        self.ewc_lambda = 0.1
+        self.ewc_lambda = 0.4
         # self.set_mode(mode="training")
 
     def get_loss(self):
@@ -427,6 +427,7 @@ class CFL:
     def on_task_update(self,data_loader):
         for data, _ in data_loader:
             _, _, _, _ = self.fit(data)
+        # print(self.encoder.state_dict())
 
         self.fisher_dict = {}
         self.optpar_dict = {}

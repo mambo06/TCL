@@ -14,7 +14,7 @@ from utils.eval_utils import linear_model_eval, plot_clusters, append_tensors_to
 from utils.load_data import Loader
 from utils.utils import set_dirs, run_with_profiler, update_config_with_model_dims
 
-torch.manual_seed(1)
+# torch.manual_seed(1)
 
 
 def eval(data_loader, config):
@@ -81,11 +81,12 @@ def retrain_models(model,data_loader):
     # print('Done retrain.........!')
     print('Retrain with New Case.........!', model.encoder.training)
     # retrain model
-    for g in range(25):
+    for g in range(50):
         train_tqdm = tqdm(enumerate(data_loader_tr_or_te), total=len(data_loader_tr_or_te), leave=True)
         for i, (x, _) in train_tqdm:
             model.fit(x)
     print('Done retrain.........!')
+    model.options['ewc'] = False
     # print('Opt after', model.optimizer_ae.state_dict())
     # sys.exit(0)
  

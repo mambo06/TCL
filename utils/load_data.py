@@ -21,13 +21,13 @@ from pathlib import Path
 from category_encoders import LeaveOneOutEncoder
 from sklearn.preprocessing import OrdinalEncoder
 
-
+torch.manual_seed(98)
 
 class Loader(object):
     """ Data loader """
 
     def __init__(self, config, dataset_name, drop_last=True, kwargs={}):
-        torch.manual_seed(100)
+        
         # Get batch size
         batch_size = config["batch_size"]
         # Get config
@@ -47,17 +47,13 @@ class Loader(object):
 
         sampled_train_dataset = self.sample_from_dataset(train_dataset,100)
         # sampled_test_dataset = self.sample_from_dataset(test_dataset,200)
-
         merged_train_dataset = ConcatDataset([sampled_train_dataset, test_dataset])
-
-        trainFromTest_dataset, testFromTest_dataset = random_split(test_dataset, [0.99, 0.01])
-
-
         # Create a new dataloader for the merged dataset
         self.merged_train_dataloader = DataLoader(merged_train_dataset, batch_size=batch_size, shuffle=True,drop_last=True)
 
-        # self.trainFromTest_dataloader = DataLoader(ConcatDataset([trainFromTest_dataset,sampled_train_dataset]), batch_size=batch_size, shuffle=True,drop_last=False)
-        self.trainFromTest_dataloader = DataLoader(trainFromTest_dataset, batch_size=batch_size, shuffle=True,drop_last=False)
+        trainFromTest_dataset, testFromTest_dataset = random_split(test_dataset, [0.8, 0.2])
+        self.trainFromTest_dataloader = DataLoader(ConcatDataset([trainFromTest_dataset,sampled_train_dataset]), batch_size=batch_size, shuffle=True,drop_last=False)
+        # self.trainFromTest_dataloader = DataLoader(trainFromTest_dataset, batch_size=batch_size, shuffle=True,drop_last=False)
        
         self.testFromTest_dataloader = DataLoader(testFromTest_dataset, batch_size=batch_size, shuffle=True,drop_last=False)
 
@@ -77,7 +73,7 @@ class Loader(object):
        
         return train_dataset, test_dataset, val_dataset
 
-    def sample_from_dataset(self, dataset, sample_size=1000):
+    def sample_from_dataset(self, dataset, sample_size):
         # Generate random indices
         indices = torch.randperm(len(dataset))[:sample_size]
         
