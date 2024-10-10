@@ -349,16 +349,16 @@ class CFL:
 
         """Used to save weights."""
         for model_name in self.model_dict:
-            # th.save(self.model_dict[model_name], self._model_path + "/" + model_name + "_"+ prefix + ".pt")
-            th.save(self.model_dict[model_name].state_dict(), self._model_path + "/" + model_name + "_"+ prefix + ".pt")
+            th.save(self.model_dict[model_name], self._model_path + "/" + model_name + "_"+ prefix + ".pt")
+            # th.save(self.model_dict[model_name].state_dict(), self._model_path + "/" + model_name + "_"+ prefix + ".pt")
         print("Done with saving models.")
 
     def load_models(self):
         config = self.options
         prefix = str(config['epochs']) + "e-" + str(config["dataset"])
         model = th.load(self._model_path + "/" + 'encoder' + "_"+ prefix + ".pt", map_location=self.device)
-        self.encoder.load_state_dict(model)
-        # self.encoder =  model
+        # self.encoder.load_state_dict(model)
+        self.encoder =  model
         # self.encoder.train()
         # print(self.encoder.state_dict())
         # sys.exit(0)
