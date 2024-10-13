@@ -25,7 +25,9 @@ learning_rate: 0.0055              # Learning rate for training
 batch_size: 180                    # Set batch size
 nth_epoch: 1                      # Compute validation loss in every nth_epoch
 validate: false                   # Whether to compute validation loss
+
 scheduler: true                  # If True, turns on scheduler for learning rate.
+reduce_lr: false
 validateScore: false            # if true either rmse or accuracy is used, loss otherwise
 validation: false
 

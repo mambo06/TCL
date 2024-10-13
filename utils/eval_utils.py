@@ -105,7 +105,7 @@ def linear_model_eval(config, z_train, y_train, suffix ,
                            # reg_alpha=1, 
                            # reg_lambda=1,
                            # subsample=0.7, 
-                           colsample_bytree=0.2,
+                           colsample_bytree=0.8,
                            )
             # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
             # end xgboost

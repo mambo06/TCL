@@ -21,7 +21,7 @@ from pathlib import Path
 from category_encoders import LeaveOneOutEncoder
 from sklearn.preprocessing import OrdinalEncoder
 
-torch.manual_seed(98)
+torch.manual_seed(200)
 
 class Loader(object):
     """ Data loader """
