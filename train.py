@@ -74,7 +74,7 @@ def run(config, save_weights=True):
     
     start0 = True
     total=len(data)
-    
+
     for epoch in range(config["epochs"]):
         epoch_loss = []
         # start = time.process_time()
@@ -276,60 +276,25 @@ def run(config, save_weights=True):
 
         _ = model.scheduler.step() if model.options["scheduler"] else None
 
+        # if config['reduce_lr']  : 
+        #     model.reducer.step(epoch_loss)
+        #     if config['learning_rate_reducer'] != model.reducer.get_last_lr():
+        #         print('Learning Rate :',model.reducer.get_last_lr())
+        #         config['learning_rate_reducer'] = model.reducer.get_last_lr()
+
         if config['reduce_lr']  : 
             model.reducer.step(epoch_loss)
-            if config['learning_rate_reducer'] != model.reducer.get_last_lr():
-                print('Learning Rate :',model.reducer.get_last_lr())
-                config['learning_rate_reducer'] = model.reducer.get_last_lr()
+            current_lr = model.optimizer_ae.param_groups[0]['lr']
+            try:
+                if config['learning_rate_reducer'] != model.reducer.get_last_lr():
+                    print('Learning Rate :',model.reducer.get_last_lr())
+                    config['learning_rate_reducer'] = model.reducer.get_last_lr()
+            except Exception as e:
+                if config['learning_rate_reducer'] != current_lr:
+                    print('Learning Rate :',current_lr)
+                    config['learning_rate_reducer'] = current_lr
 
-        # training_time = time.process_time() - start
-
-    # print('test')
-    # for epoch in range(config["epochs"]):
-    #     epoch_loss = []
-    #     # start = time.process_time()
-    #     total = len(data_test)
-    #     tqdm_bar = tqdm(enumerate(data_test), 
-    #         total=total, 
-    #         leave=True, 
-    #         desc = 'Training on test: ' + str(epoch))
-
-    #     # tqdm_bar = tqdm(range(len(data)), desc = 'Training on epoch: ' + str(epoch))
-    #     if start0 == True : start0 = time.process_time()
-    #     for i, (x, _) in tqdm_bar:
-    #     # for i in tqdm_bar:
-
-    #         # x,y = next(islice(data, i, None))
-
-    #         tloss, closs, rloss, zloss = model.fit(x)
-
-    #         model.loss["tloss_o"].append(tloss.item())
-    #         model.loss["tloss_b"].append(tloss.item())
-    #         model.loss["closs_b"].append(closs.item())
-    #         model.loss["rloss_b"].append(rloss.item())
-    #         model.loss["zloss_b"].append(zloss.item())
-
-    #         epoch_loss.append(tloss.item())
-            
-    #         # model.optimizer_ae.zero_grad()
-
-    #         # tloss.backward()
-
-    #         # model.optimizer_ae.step()
-            
-    #         if i == total-1 :
-    #             description = 'tloss {0:.2f} closs {1:.2f} rloss {2:.2f} zloss {3:.2f}'.format(np.mean(model.loss["tloss_b"]),
-    #                 np.mean(model.loss["closs_b"]),
-    #                 np.mean(model.loss["rloss_b"]),
-    #                 np.mean(model.loss["zloss_b"])
-    #                 )
-    #             tqdm_bar.set_description(description)
-
-    #     epoch_loss = np.mean(epoch_loss)
-
-    # start1 = time.process_time()
-    # print("Total Training Time :", start1 - start0)
-
+   
    
     _ = model.save_weights() if save_weights else None
 
