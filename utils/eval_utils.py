@@ -167,23 +167,42 @@ def linear_model_eval(config, z_train, y_train, suffix ,
             # param_grid = {"max_depth":    [8],
             #       "n_estimators": [ 1000],
             #       "learning_rate": [0.015]}
-            search = GridSearchCV(clf, param_grid, cv=2,verbose=2, n_jobs=-1).fit(z_train, y_train)
-            print("The best hyperparameters are ",search.best_params_)
+            # search = GridSearchCV(clf, param_grid, cv=2,verbose=2, n_jobs=-1).fit(z_train, y_train)
+            # print("The best hyperparameters are ",search.best_params_)
 
-            clf = xgb.XGBClassifier(learning_rate = search.best_params_["learning_rate"],
-                           n_estimators  = search.best_params_["n_estimators"],
-                           max_depth     = search.best_params_["max_depth"],
-                           eval_metric='logloss')
-            # clf = xgb.XGBClassifier(learning_rate = param_grid["learning_rate"][-1],
-            #                n_estimators  = param_grid["n_estimators"][-1],
-            #                max_depth     = param_grid["max_depth"][-1],
-            #                eval_metric='mlogloss',
-            #                # early_stopping_rounds = 10,
-            #                verbosity = 2)
+            # clf = xgb.XGBClassifier(learning_rate = search.best_params_["learning_rate"],
+            #                n_estimators  = search.best_params_["n_estimators"],
+            #                max_depth     = search.best_params_["max_depth"],
+            #                eval_metric='logloss')
+            clf = xgb.XGBClassifier(learning_rate = param_grid["learning_rate"][-1],
+                           n_estimators  = param_grid["n_estimators"][-1],
+                           max_depth     = param_grid["max_depth"][-1],
+                           eval_metric='mlogloss',
+                           # early_stopping_rounds = 10, 
+                           colsample_bytree=0.5,
+                           # subsample=0.5, 
+                           verbosity = 0)
 
 
             # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
-            clf.fit(z_train, y_train)
+            if models==None: 
+                clf.fit(z_train, y_train, 
+                    # verbose=0,eval_set=[(z_val, y_val)]
+                    )
+            elif suffix.split('-')[1] == 'ClNoRetrain':
+                clf.fit(x_, y_, 
+                    verbose=0, 
+                    # eval_set=[(z_val, y_val)],
+                    )
+            else:
+                clf.fit(x_, y_, 
+                    xgb_model=models, 
+                    verbose=0, 
+                    # eval_set=[(z_val, y_val)],
+                    # early_stopping_rounds=100,
+                    )
+
+            # clf.fit(z_train, y_train)
         
             y_hat_train = clf.predict(z_train)
             y_hat_test = clf.predict(z_test)
