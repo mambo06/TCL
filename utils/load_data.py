@@ -51,7 +51,7 @@ class Loader(object):
         # Create a new dataloader for the merged dataset
         self.merged_train_dataloader = DataLoader(merged_train_dataset, batch_size=batch_size, shuffle=True,drop_last=True)
 
-        trainFromTest_dataset, testFromTest_dataset = random_split(test_dataset, [0.5, 0.5])
+        trainFromTest_dataset, testFromTest_dataset = random_split(test_dataset, [config['training_data_ratio'], 1-config['training_data_ratio']])
         self.trainFromTest_dataloader = DataLoader(ConcatDataset([trainFromTest_dataset,sampled_train_dataset]), batch_size=batch_size, shuffle=True,drop_last=False)
         # self.trainFromTest_dataloader = DataLoader(trainFromTest_dataset, batch_size=batch_size, shuffle=True,drop_last=False)
        
