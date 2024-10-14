@@ -95,19 +95,21 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             #   "n_estimators": [ 1000,],
             #   "learning_rate": [0.015]}
 
-            clf = xgb.XGBRegressor(eval_metric='rmse')
-            search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
-            print("The best hyperparameters are ",search.best_params_)
+            # clf = xgb.XGBRegressor(eval_metric='rmse')
+            # search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
+            # print("The best hyperparameters are ",search.best_params_)
 
-            clf = xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
-                           n_estimators  = search.best_params_["n_estimators"],
-                           max_depth     = search.best_params_["max_depth"],
-                           eval_metric='rmse')
-            # clf = xgb.XGBRegressor(learning_rate = param_grid["learning_rate"][-1],
-            #                n_estimators  = param_grid["n_estimators"][-1],
-            #                max_depth     = param_grid["max_depth"][-1],
+            # clf = xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
+            #                n_estimators  = search.best_params_["n_estimators"],
+            #                max_depth     = search.best_params_["max_depth"],
             #                eval_metric='rmse')
-            # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
+            clf = xgb.XGBRegressor(learning_rate = param_grid["learning_rate"][-1],
+                           n_estimators  = param_grid["n_estimators"][-1],
+                           max_depth     = param_grid["max_depth"][-1],
+                           # eval_metric='rmse',
+                           colsample_bytree=0.5,
+                           verbosity=0)
+            clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
             # end xgboost
 
             clf.fit(z_train, y_train)
