@@ -105,7 +105,7 @@ def linear_model_eval(config, z_train, y_train, suffix ,
                            # reg_alpha=1, 
                            # reg_lambda=1,
                            # subsample=0.7, 
-                           colsample_bytree=0.8,
+                           colsample_bytree=config['colsample_bytree'],
                            )
             # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
             # end xgboost
@@ -179,7 +179,7 @@ def linear_model_eval(config, z_train, y_train, suffix ,
                            max_depth     = param_grid["max_depth"][-1],
                            eval_metric='mlogloss',
                            # early_stopping_rounds = 10, 
-                           colsample_bytree=0.5,
+                           colsample_bytree= config['colsample_bytree'],
                            # subsample=0.5, 
                            verbosity = 0)
 

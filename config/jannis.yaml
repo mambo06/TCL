@@ -63,3 +63,4 @@ ns : false                        # no pearson shuffle. if true no pearson shuff
 local : false
 
 # {'learning_rate': 0.015, 'max_depth': 8, 'n_estimators': 900}
+colsample_bytree: 0.5

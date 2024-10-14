@@ -60,3 +60,4 @@ reconstruct_subset: true         # If True, reconstructs subset of given input t
 
 ns : false                        # no pearson shuffle. if true no pearson shuffle applied to the loaded data
 local : false
+colsample_bytree: 0.5
