@@ -45,7 +45,7 @@ class Loader(object):
         # Set the loader for validation set
         self.validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, drop_last=drop_last, **kwargs)
 
-        sampled_train_dataset = self.sample_from_dataset(train_dataset,100)
+        sampled_train_dataset = self.sample_from_dataset(train_dataset,config['memoryNumber'])
         # sampled_test_dataset = self.sample_from_dataset(test_dataset,200)
         merged_train_dataset = ConcatDataset([sampled_train_dataset, test_dataset])
         # Create a new dataloader for the merged dataset

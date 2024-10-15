@@ -64,3 +64,4 @@ patient : 10
 local : false
 
 colsample_bytree: 0.5
+memoryNumber: 100
