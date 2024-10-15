@@ -14,12 +14,13 @@ from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.linear_model import Perceptron
+from sklearn.linear_model import Perceptron, SGDClassifier 
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge, HuberRegressor, ElasticNet
 from sklearn.model_selection import GridSearchCV
+from sklearn.naive_bayes import MultinomialNB as nb
 
 
 
@@ -61,7 +62,7 @@ def linear_model_eval(config, z_train, y_train, suffix ,
               "n_estimators": [900, 1000],
               "learning_rate": [0.01, 0.015]}
 
-    regularisation_list = [1] # overide all
+    regularisation_list = [100] # overide all
     if config['task_type'] == 'regression':
         regularisation_list = range(90,140,10)
         # regularisation_list = [ 0.01, 0.1, 1, 10, 1e2, 1e3, 1e4]
@@ -69,7 +70,7 @@ def linear_model_eval(config, z_train, y_train, suffix ,
         # regularisation_list = range(90,110,5)
         # regularisation_list = [5,7,9]
         
-        regularisation_list = [1]
+        # regularisation_list = [1]
 
        
 
@@ -141,20 +142,8 @@ def linear_model_eval(config, z_train, y_train, suffix ,
                                  "train_acc": tr_acc,
                                  "test_acc": te_acc,
                                  "val_acc": ve_acc})
-
-            # clf = rgs(z_train,y_train,z_val,y_val,z_test,y_test)
-            # result = clf.fit()
-            # for modelname, scores in result.items():
-            #     for minmax, score in scores.items():
-            #         # print('score :',score)
-            #         if len(score) == 0 : continue
-            #         results_list.append({"model": modelname + '_' + minmax,
-            #                      "train_acc": score['train'],
-            #                      "test_acc": score['test'],
-            #                      "val_acc": score['val']})
-
         else:
-            clf = LogisticRegression( solver='lbfgs', C=c, multi_class='multinomial', max_iter=2000,)
+            # clf = LogisticRegression( solver='lbfgs', C=c, multi_class='multinomial', max_iter=2000,)
             # clf = DecisionTreeClassifier(random_state=0,criterion='entropy',)
             # clf = RandomForestClassifier(criterion='log_loss', n_estimators=c, )
             # clf = Perceptron(tol=1e-3, random_state=0)        
@@ -162,8 +151,10 @@ def linear_model_eval(config, z_train, y_train, suffix ,
             # clf = LinearSVC(C=c)
             # Fit model to the data
             # clf = KNeighborsClassifier(n_neighbors=c)
+            # clf = nb()
+            # clf = SGDClassifier()
 
-            clf = xgb.XGBClassifier()
+            clf = xgb.XGBClassifier(colsample_bytree= config['colsample_bytree'])
             # param_grid = {"max_depth":    [8],
             #       "n_estimators": [ 1000],
             #       "learning_rate": [0.015]}
@@ -173,29 +164,41 @@ def linear_model_eval(config, z_train, y_train, suffix ,
             # clf = xgb.XGBClassifier(learning_rate = search.best_params_["learning_rate"],
             #                n_estimators  = search.best_params_["n_estimators"],
             #                max_depth     = search.best_params_["max_depth"],
+            #                colsample_bytree= config['colsample_bytree'],
             #                eval_metric='logloss')
-            clf = xgb.XGBClassifier(learning_rate = param_grid["learning_rate"][-1],
-                           n_estimators  = param_grid["n_estimators"][-1],
-                           max_depth     = param_grid["max_depth"][-1],
-                           eval_metric='mlogloss',
-                           # early_stopping_rounds = 10, 
-                           colsample_bytree= config['colsample_bytree'],
-                           # subsample=0.5, 
-                           verbosity = 0)
+            # clf = xgb.XGBClassifier(learning_rate = param_grid["learning_rate"][-1],
+            #                n_estimators  = param_grid["n_estimators"][-1],
+            #                max_depth     = param_grid["max_depth"][-1],
+            #                eval_metric='mlogloss',
+            #                # early_stopping_rounds = 10, 
+            #                colsample_bytree= config['colsample_bytree'],
+            #                # subsample=0.5, 
+            #                verbosity = 0)
 
 
             # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
             if models==None: 
-                clf.fit(z_train, y_train, 
+                search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
+                print("The best hyperparameters are ",search.best_params_)
+
+                clf = xgb.XGBClassifier(learning_rate = search.best_params_["learning_rate"],
+                               n_estimators  = search.best_params_["n_estimators"],
+                               max_depth     = search.best_params_["max_depth"],
+                               colsample_bytree= config['colsample_bytree'],
+                               eval_metric='logloss')
+                clf.fit(z_train, y_train,  
+                    # classes=np.unique(y_train),
                     # verbose=0,eval_set=[(z_val, y_val)]
                     )
             elif suffix.split('-')[1] == 'ClNoRetrain':
-                clf.fit(x_, y_, 
+                # clf = models
+                clf.fit(x_, y_,
                     verbose=0, 
                     # eval_set=[(z_val, y_val)],
                     )
             else:
-                clf.fit(x_, y_, 
+                # clf = models
+                clf.fit(x_, y_,
                     xgb_model=models, 
                     verbose=0, 
                     # eval_set=[(z_val, y_val)],
