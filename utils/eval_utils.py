@@ -107,9 +107,10 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
                            n_estimators  = param_grid["n_estimators"][-1],
                            max_depth     = param_grid["max_depth"][-1],
                            # eval_metric='rmse',
-                           colsample_bytree=0.5,
+                           subsample=0.5, 
+                           # colsample_bytree=0.5,
                            verbosity=0)
-            clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
+            # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
             # end xgboost
 
             clf.fit(z_train, y_train)
