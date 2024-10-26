@@ -27,20 +27,22 @@ class AEWrapper(nn.Module):
         output_dim = self.options["dims"][-1]
         # Two-Layer Projection Network
         # First linear layer, which will be followed with non-linear activation function in the forward()
-        self.linear_layer1 = nn.Linear(output_dim, output_dim)
+        self.linear_layer1 = nn.Linear(output_dim, output_dim*2)
         # Last linear layer for final projection
-        self.linear_layer2 = nn.Linear(output_dim, output_dim)
+        self.linear_layer2 = nn.Linear(output_dim*2, output_dim)
 
     def forward(self, x):
         # Forward pass on Encoder
         latent = self.encoder(x)
         # Forward pass on Projection
         # Apply linear layer followed by non-linear activation to decouple final output, z, from representation layer h.
-        z = F.leaky_relu(self.linear_layer1(latent))
+        z = self.linear_layer1(latent)
+        z = F.leaky_relu(z)
+        
         # Apply final linear layer
         z = self.linear_layer2(z)
         # Do L2 normalization
-        z = F.normalize(z, p=self.options["p_norm"], dim=1) if self.options["normalize"] else z
+        z = F.normalize(z, p=int(self.options["norm"][-1]), dim=1) if self.options["normalize"] else z
         # Forward pass on decoder
         x_recon = self.decoder(latent)
         # Return 
@@ -170,6 +172,7 @@ class HiddenLayers(nn.Module):
         super(HiddenLayers, self).__init__()
         self.layers = nn.ModuleList()
         dims = options["dims"]
+        dims[-1] = dims[-1]
 
         for i in range(1, len(dims) - 1):
             self.layers.append(nn.Linear(dims[i - 1], dims[i]))

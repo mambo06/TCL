@@ -26,12 +26,12 @@ batch_size: 300                    # Set batch size
 nth_epoch: 1                      # Compute validation loss in every nth_epoch
 validate: false                   # Whether to compute validation loss
 
-scheduler: false                  # If True, turns on scheduler for learning rate.
-reduce_lr: true
+scheduler: true                  # If True, turns on scheduler for learning rate.
+reduce_lr: false
 
 validateScore: false            # if true either rmse or accuracy is used, loss otherwise
 validation: false
-
+patient: 10
 # Options for subsetting
 n_subsets: 2                      # Use at least 2 when using a single view. 
 overlap: 0                     # A ratio [0,1) that defines how many features are overlapped between subsets. 
@@ -41,9 +41,9 @@ aggregation: mean                 # options:  mean (default), sum, max, min, and
 
 # Noise-related options
 add_noise: true                   # If True, it adds noise. The noise type is defined in "noise_type"
-noise_type: swap_noise            # Type of noise to add to. Choices: swap_noise, gaussian_noise, zero_out
+noise_type: gaussian_noise            # Type of noise to add to. Choices: swap_noise, gaussian_noise, zero_out
 masking_ratio: [0.5,0.5]                # Percentage of the feature to add noise to binomial, all applied
-noise_level: [0.1,0.1]                  # Stdev defined for Gaussian noise
+noise_level: [0.,0.]                  # Stdev defined for Gaussian noise
 
 # Data
 n_classes: 10                     # Number of classes in the data 
@@ -62,3 +62,7 @@ reconstruct_subset: true         # If True, reconstructs subset of given input t
 
 ns : false                        # no pearson shuffle. if true no pearson shuffle applied to the loaded data
 local : false
+
+subsample: 0.5
+colsample_bytree: 1
+epoch: 50

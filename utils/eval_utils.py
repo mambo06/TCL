@@ -16,12 +16,13 @@ from sklearn.metrics import precision_recall_fscore_support
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import Perceptron
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, accuracy_score
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge, HuberRegressor, ElasticNet
 from sklearn.model_selection import GridSearchCV
 
 
+from sklearn.calibration import CalibratedClassifierCV
 
 from utils.utils import tsne
 from utils.colors import get_color_list
@@ -32,6 +33,10 @@ import json
 import xgboost as xgb
 
 from .regression import regressions  as rgs
+from scipy.optimize import minimize_scalar
+from itertools import product
+
+
 
 
 
@@ -57,16 +62,14 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
     
     # Sweep regularization parameter to see what works best for logistic regression
     regularisation_list = [0.01, 0.1 , 1, 10, 1e2, 1e3, 1e4, 1e5, 1e6]
-    regularisation_list = [1, 10,1e2,]
+    regularisation_list = [0.1, 1, 10,1e2,]
 
     regularisation_list = range(90,110,5)
-    # regularisation_list = [1]
 
     param_grid = {"max_depth":    [ 8,10,],
               "n_estimators": [900, 1000],
               "learning_rate": [0.01, 0.015]}
 
-    regularisation_list = [1] # overide all
     if config['task_type'] == 'regression':
         regularisation_list = range(90,140,10)
         # regularisation_list = [ 0.01, 0.1, 1, 10, 1e2, 1e3, 1e4]
@@ -74,7 +77,7 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
         # regularisation_list = range(90,110,5)
         # regularisation_list = [5,7,9]
         
-        regularisation_list = [1]
+    regularisation_list = [1]
 
        
 
@@ -151,57 +154,88 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             #                      "val_acc": score['val']})
 
         else:
-            clf = LogisticRegression( solver='lbfgs', C=c, multi_class='multinomial', max_iter=2000,)
-            # clf = DecisionTreeClassifier(random_state=0,criterion='entropy',)
-            # clf = RandomForestClassifier(criterion='log_loss', n_estimators=c, )
-            # clf = Perceptron(tol=1e-3, random_state=0)        
+            modelDict = {}
+            # clf0 = LogisticRegression( solver='lbfgs', C=1, multi_class='multinomial', max_iter=2000,)
+            # modelDict['Linear'] = clf0
+            # clf1 = DecisionTreeClassifier(random_state=0,criterion='entropy',)
+            # clf1 = RandomForestClassifier(criterion='log_loss', n_estimators=100, )
+            clf1 = Perceptron(tol=1e-3, random_state=0)        
             # clf = SVC(C=c) 
             # clf = LinearSVC(C=c)
             # Fit model to the data
-            # clf = KNeighborsClassifier(n_neighbors=c)
+            # clf1 = KNeighborsClassifier(n_neighbors=100)
+            # modelDict['KNN'] = clf1
 
-            # clf = xgb.XGBClassifier()
-            # # param_grid = {"max_depth":    [8],
-            # #       "n_estimators": [ 1000],
-            # #       "learning_rate": [0.015]}
+            # clf = xgb.XGBClassifier(
+            #     colsample_bytree=config['colsample_bytree'],
+            #     subsample=config['subsample']
+            #     )
+            # modelDict['Linear'] = clf0
+          
             # search = GridSearchCV(clf, param_grid, cv=2,verbose=2, n_jobs=-1).fit(z_train, y_train)
             # print("The best hyperparameters are ",search.best_params_)
 
             # clf = xgb.XGBClassifier(learning_rate = search.best_params_["learning_rate"],
             #                n_estimators  = search.best_params_["n_estimators"],
             #                max_depth     = search.best_params_["max_depth"],
-            #                eval_metric='logloss')
+            #                colsample_bytree=config['colsample_bytree'],
+            #                subsample=config['subsample'],
+            #                )
             clf = xgb.XGBClassifier(learning_rate = param_grid["learning_rate"][-1],
                            n_estimators  = param_grid["n_estimators"][-1],
                            max_depth     = param_grid["max_depth"][-1],
                            # eval_metric='mlogloss',
                            # early_stopping_rounds = 10,
-                           colsample_bytree=0.5,
+                           colsample_bytree=config['colsample_bytree'],
+                           subsample=config['subsample'],
                            verbosity=0)
+            modelDict['XGB'] = clf
 
+            for item in modelDict:
+                print(f'Prediction with {item}')
+                clf = modelDict[item]
 
-            clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
-            clf.fit(z_train, y_train)
-        
-            y_hat_train = clf.predict(z_train)
-            y_hat_test = clf.predict(z_test)
-            y_hat_val = clf.predict(z_val)
-        
-            # Print results
-            tr_acc =  precision_recall_fscore_support(y_train, y_hat_train, average='macro')
-            val_acc =  precision_recall_fscore_support(y_val, y_hat_val, average='macro')
-            te_acc =  precision_recall_fscore_support(y_test, y_hat_test, average='macro')
-            print("Training score: precision   {}, recall {}, F1 {}, support {}".format(tr_acc[0],tr_acc[1],tr_acc[2],tr_acc[3]) )
-            print("Validation score: precision {}, recall {}, F1 {}, support {}".format(val_acc[0],val_acc[1],val_acc[2],val_acc[3]) )
-            print("Test score: precision.      {}, recall {}, F1 {}, support {}".format(te_acc[0],te_acc[1],te_acc[2],te_acc[3]) )
-        
-        # # Score for training set
-        # tr_acc = clf.score(z_train, y_train)
-        # # # Score for test set
-        # te_acc = clf.score(z_test, y_test)
-        # # # Score for test set
-        # ve_acc = clf.score(z_val, y_val)
-        # print(tr_acc,ve_acc,te_acc)
+                print('Fits with model')
+                # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
+                clf.fit(z_train, y_train)
+
+                print('Calibrate Model')
+                calibrated_clf = CalibratedClassifierCV(clf, 
+                    cv='prefit', 
+                    # cv=5,
+                    n_jobs=-1)
+                calibrated_clf.fit(z_val, y_val) 
+                # calibrated_clf.fit(z_test, y_test)
+            
+                clf = calibrated_clf
+
+                y_hat_train = clf.predict(z_train)
+                y_hat_test = clf.predict(z_test)
+                y_hat_val = clf.predict(z_val)
+            
+                # print('Predict probabilities')
+                # y_hat_train =  clf.predict_proba(z_train)
+                # y_hat_test =  clf.predict_proba(z_test)
+                # y_hat_val =  clf.predict_proba(z_val)
+
+                # best_thresholds, best_accuracy = grid_search_thresholds_vectorized(y_hat_test, y_test, step=0.1)
+                # print(f"\nBest Thresholds: {best_thresholds}")
+                # print(f"Best Accuracy: {best_accuracy:.3f}")
+
+                # print('Predictions')
+                # y_hat_train = predict_one_vs_rest_vectorized(y_hat_train, best_thresholds)
+                # y_hat_val = predict_one_vs_rest_vectorized(y_hat_val, best_thresholds)
+                # y_hat_test = predict_one_vs_rest_vectorized(y_hat_test, best_thresholds)
+
+            
+                # Print results
+                tr_acc =  precision_recall_fscore_support(y_train, y_hat_train, average='macro')
+                val_acc =  precision_recall_fscore_support(y_val, y_hat_val, average='macro')
+                te_acc =  precision_recall_fscore_support(y_test, y_hat_test, average='macro')
+
+                print("Training score: precision   {}, recall {}, F1 {}, support {}".format(tr_acc[0],tr_acc[1],tr_acc[2],tr_acc[3]) )
+                print("Validation score: precision {}, recall {}, F1 {}, support {}".format(val_acc[0],val_acc[1],val_acc[2],val_acc[3]) )
+                print("Test score: precision.      {}, recall {}, F1 {}, support {}".format(te_acc[0],te_acc[1],te_acc[2],te_acc[3]) )
         
         # Record results
             results_list.append({"model": "LogReg_" + str(c),
@@ -438,3 +472,54 @@ def aggregate(latent_list, config):
         exit()
         
     return latent
+
+def temperature_scale(logits, temperature):
+    return logits / temperature
+
+def nll_loss(temperature, logits, true_labels):
+    scaled_logits = temperature_scale(logits, temperature)
+    loss = -np.mean(np.log(scaled_logits[range(len(true_labels)), true_labels] + 1e-10))
+    return loss
+
+def predict_one_vs_rest_vectorized(probabilities, thresholds):
+    # Compare each probability with its corresponding threshold
+    meets_threshold = probabilities >= thresholds
+
+    # Find where at least one class meets the threshold
+    any_meets_threshold = np.any(meets_threshold, axis=1)
+
+    # For samples where at least one class meets the threshold,
+    # choose the class with the highest probability among those that meet the threshold
+    masked_probs = np.where(meets_threshold, probabilities, -np.inf)
+    predictions_threshold_met = np.argmax(masked_probs, axis=1)
+
+    # For samples where no class meets the threshold, choose the class with the highest probability
+    predictions_no_threshold_met = np.argmax(probabilities, axis=1)
+
+    # Combine the predictions
+    predictions = np.where(any_meets_threshold, predictions_threshold_met, predictions_no_threshold_met)
+
+    return predictions
+
+def grid_search_thresholds_vectorized(probabilities, y_true, step=0.1):
+    n_classes = probabilities.shape[1]
+    threshold_values = np.arange(0.1, 1.0, step)
+    
+    # Generate all combinations of thresholds
+    threshold_combinations = np.array(list(product(threshold_values, repeat=n_classes)))
+    
+    # Predict for all threshold combinations
+    all_predictions = np.array([predict_one_vs_rest_vectorized(probabilities, thresholds) 
+                                for thresholds in threshold_combinations])
+    
+    # Calculate accuracy for all predictions
+    accuracies = np.array([accuracy_score(y_true, pred, normalize=False) for pred in all_predictions])
+    
+    # Find the best accuracy and corresponding thresholds
+    best_index = np.argmax(accuracies)
+    best_accuracy = accuracies[best_index]
+    best_thresholds = threshold_combinations[best_index]
+    
+    return best_thresholds, best_accuracy
+
+

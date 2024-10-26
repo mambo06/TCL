@@ -69,7 +69,7 @@ class CFL:
     def set_autoencoder(self):
         """Sets up the autoencoder model, optimizer, and loss"""
         # Instantiate the model for the text Autoencoder
-        self.encoder = AEWrapper(self.options)
+        self.encoder = th.compile(AEWrapper(self.options)) #optime
         # Add the model and its name to a list to save, and load in the future
         self.model_dict.update({"encoder": self.encoder})
         # Assign autoencoder to a device
@@ -329,7 +329,9 @@ class CFL:
 
         """Used to save weights."""
         for model_name in self.model_dict:
-            th.save(self.model_dict[model_name], self._model_path + "/" + model_name + "_"+ prefix + ".pt")
+            # th.save(self.model_dict[model_name], self._model_path + "/" + model_name + "_"+ prefix + ".pt")
+            th.save(self.model_dict[model_name].state_dict(), self._model_path + "/" + model_name + "_"+ prefix + ".pt")
+            
         print("Done with saving models.")
 
     def load_models(self):
@@ -337,13 +339,14 @@ class CFL:
 
         prefix = str(config['epochs']) + "e-" + str(config["dataset"])
 
-        
+        loaded_state_dict = th.load(self._model_path + "/encoder_"+ prefix + ".pt")
+        self.encoder.load_state_dict(loaded_state_dict, strict=False)
 
         """Used to load weights saved at the end of the training."""
-        for model_name in self.model_dict:
-            model = th.load(self._model_path + "/" + model_name + "_"+ prefix + ".pt", map_location=self.device)
-            setattr(self, model_name, model.eval())
-            print(f"--{model_name} is loaded")
+        # for model_name in self.model_dict:
+        #     model = th.load(self._model_path + "/" + model_name + "_"+ prefix + ".pt", map_location=self.device)
+        #     setattr(self, model_name, model.eval())
+        #     print(f"--{model_name} is loaded")
         print("Done with loading models.")
 
     def print_model_summary(self):
@@ -365,7 +368,7 @@ class CFL:
 
         """
         # Reset optimizer
-        optimizer.zero_grad()
+        optimizer.zero_grad(set_to_none=True) # for cpu optim
         # Backward propagation to compute gradients
         loss.backward(retain_graph=retain_graph)
         # Update weights
@@ -377,7 +380,7 @@ class CFL:
         self.scheduler = th.optim.lr_scheduler.StepLR(self.optimizer_ae, step_size=1, gamma=0.99)
 
     def _set_reduce_lr(self):
-        self.reducer = ReduceLROnPlateau(self.optimizer_ae, 'min', patience=5, factor=0.1,)
+        self.reducer = ReduceLROnPlateau(self.optimizer_ae, 'min', patience=self.options['patient'], factor=0.1,)
 
     def _set_paths(self):
         """ Sets paths to bse used for saving results at the end of the training"""

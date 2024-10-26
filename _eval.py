@@ -14,7 +14,7 @@ from utils.eval_utils import linear_model_eval, plot_clusters, append_tensors_to
 from utils.load_data import Loader
 from utils.utils import set_dirs, run_with_profiler, update_config_with_model_dims
 
-torch.manual_seed(1)
+# torch.manual_seed(1)
 
 # shuffle_list = None
 
@@ -34,26 +34,7 @@ def eval(data_loader, config):
 
     
     # Evaluate Autoencoder
-    with th.no_grad():          
-        if config['local']:  
-            # evaluate original
-            print(f" Evaluate Original dataset")
-            # Get the joint embeddings and class labels of training set
-            # z_train, y_train = evalulate_original(data_loader, config, plot_suffix="training", mode="train")
-            
-            z_train,  y_train = evalulate_original(data_loader, config, plot_suffix="train", mode="train", z_train=None, y_train=None)
-            evalulate_original(data_loader, config, plot_suffix="test", mode="test", z_train=z_train, y_train=y_train)
-
-            # End of the run
-            print(f"Evaluation results are saved under ./results/{config['framework']}/evaluation/\n")
-            print(f"{100 * '='}\n")
-
-            # If mlflow==True, track results
-            # if config["mlflow"]:
-            #     # Log model and results with mlflow
-            #     mlflow.log_artifacts(model._results_path + "/evaluation/" + "/clusters", "evaluation")
-
-        if config['baseGlobal'] : sys.exit()
+    with th.no_grad(): 
 
         print(f" Evaluate embeddings dataset")
         # Get the joint embeddings and class labels of training set

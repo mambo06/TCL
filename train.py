@@ -340,7 +340,7 @@ if __name__ == "__main__":
     dims = copy.deepcopy(config["dims"])
     cfg = copy.deepcopy(config)
     main(config)
-    eval.main(config)
+    eval.main(cfg)
     
 
     

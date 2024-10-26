@@ -23,7 +23,7 @@ from category_encoders import LeaveOneOutEncoder
 from sklearn.preprocessing import OrdinalEncoder
 
 
-
+# torch.manual_seed(100)
 class Loader(object):
     """ Data loader """
 

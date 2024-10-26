@@ -21,11 +21,15 @@ p_norm: 1                         # p-value used for normalization. p=2 for L2 n
 # Parameters for training
 dropout_rate: 0.2                 # Set dropout rate if Dropout is being used
 learning_rate: 0.01              # Learning rate for training
-# epochs: 5                        # Number of epochs to use for training
+
 batch_size: 108                    # Set batch size
 nth_epoch: 1                      # Compute validation loss in every nth_epoch
 validate: false                   # Whether to compute validation loss
+
 scheduler: true                  # If True, turns on scheduler for learning rate.
+reduce_lr: false
+patient: 10
+
 validateScore: false            # if true either rmse or accuracy is used, loss otherwise
 validation: false
 
@@ -60,4 +64,7 @@ reconstruct_subset: true         # If True, reconstructs subset of given input t
 ns : false                        # no pearson shuffle. if true no pearson shuffle applied to the loaded data
 local : false
 
+subsample: 0.5
+colsample_bytree: 0.9
+epoch: 75
 # {'learning_rate': 0.015, 'max_depth': 8, 'n_estimators': 900}
