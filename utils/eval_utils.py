@@ -209,23 +209,23 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             
                 clf = calibrated_clf
 
-                y_hat_train = clf.predict(z_train)
-                y_hat_test = clf.predict(z_test)
-                y_hat_val = clf.predict(z_val)
+                # y_hat_train = clf.predict(z_train)
+                # y_hat_test = clf.predict(z_)
+                # y_hat_val = clf.predict(z_val)
             
-                # print('Predict probabilities')
-                # y_hat_train =  clf.predict_proba(z_train)
-                # y_hat_test =  clf.predict_proba(z_test)
-                # y_hat_val =  clf.predict_proba(z_val)
+                print('Predict probabilities')
+                y_hat_train =  clf.predict_proba(z_train)
+                y_hat_test =  clf.predict_proba(z_test)
+                y_hat_val =  clf.predict_proba(z_val)
 
-                # best_thresholds, best_accuracy = grid_search_thresholds_vectorized(y_hat_test, y_test, step=0.1)
-                # print(f"\nBest Thresholds: {best_thresholds}")
-                # print(f"Best Accuracy: {best_accuracy:.3f}")
+                best_thresholds, best_accuracy = grid_search_thresholds_vectorized(y_hat_test, y_test, step=0.005)
+                print(f"\nBest Thresholds: {best_thresholds}")
+                print(f"Best Accuracy: {best_accuracy:.3f}")
 
-                # print('Predictions')
-                # y_hat_train = predict_one_vs_rest_vectorized(y_hat_train, best_thresholds)
-                # y_hat_val = predict_one_vs_rest_vectorized(y_hat_val, best_thresholds)
-                # y_hat_test = predict_one_vs_rest_vectorized(y_hat_test, best_thresholds)
+                print('Predictions')
+                y_hat_train = predict_one_vs_rest_vectorized(y_hat_train, best_thresholds)
+                y_hat_val = predict_one_vs_rest_vectorized(y_hat_val, best_thresholds)
+                y_hat_test = predict_one_vs_rest_vectorized(y_hat_test, best_thresholds)
 
             
                 # Print results
@@ -409,7 +409,7 @@ def append_tensors_to_lists(list_of_lists, list_of_tensors):
 
     Args:
         list_of_lists (list[lists]): List of lists, each of which holds arrays
-        list_of_tensors (list[torch.tensorFloat]): List of Pytorch tensors
+        list_of_tensors (list[th.tensorFloat]): List of Pytorch tensors
 
     Returns:
         list_of_lists (list[lists]): List of lists, each of which holds arrays
@@ -418,7 +418,8 @@ def append_tensors_to_lists(list_of_lists, list_of_tensors):
     # Go through each tensor and corresponding list
     for i in range(len(list_of_tensors)):
         # Convert tensor to numpy and append it to the corresponding list
-        list_of_lists[i] += [list_of_tensors[i].detach().numpy()]
+        # list_of_lists[i] += [list_of_tensors[i].detach().numpy()]
+        list_of_lists[i] += [list_of_tensors[i].cpu()]
     # Return the lists
     return list_of_lists
 
@@ -446,11 +447,11 @@ def aggregate(latent_list, config):
     """Aggregates the latent representations of subsets to obtain joint representation
 
     Args:
-        latent_list (list[torch.FloatTensor]): List of latent variables, one for each subset
+        latent_list (list[th.FloatTensor]): List of latent variables, one for each subset
         config (dict): Dictionary holding the configuration
 
     Returns:
-        (torch.FloatTensor): Joint representation
+        (th.FloatTensor): Joint representation
 
     """
     # Initialize the joint representation
@@ -481,45 +482,121 @@ def nll_loss(temperature, logits, true_labels):
     loss = -np.mean(np.log(scaled_logits[range(len(true_labels)), true_labels] + 1e-10))
     return loss
 
+#  torch imlementation
 def predict_one_vs_rest_vectorized(probabilities, thresholds):
+    # Convert thresholds to tensor if not already
+    if not isinstance(thresholds, th.Tensor):
+        thresholds = th.tensor(thresholds, device='cpu')
+
+    if not isinstance(probabilities, th.Tensor):
+        probabilities = th.tensor(probabilities, device='cpu')
+    
     # Compare each probability with its corresponding threshold
     meets_threshold = probabilities >= thresholds
-
+    
     # Find where at least one class meets the threshold
-    any_meets_threshold = np.any(meets_threshold, axis=1)
-
+    any_meets_threshold = th.any(meets_threshold, dim=1)
+    
     # For samples where at least one class meets the threshold,
     # choose the class with the highest probability among those that meet the threshold
-    masked_probs = np.where(meets_threshold, probabilities, -np.inf)
-    predictions_threshold_met = np.argmax(masked_probs, axis=1)
-
+    masked_probs = th.where(meets_threshold, probabilities, th.tensor(float('-inf'), device=probabilities.device))
+    predictions_threshold_met = th.argmax(masked_probs, dim=1)
+    
     # For samples where no class meets the threshold, choose the class with the highest probability
-    predictions_no_threshold_met = np.argmax(probabilities, axis=1)
-
+    predictions_no_threshold_met = th.argmax(probabilities, dim=1)
+    
     # Combine the predictions
-    predictions = np.where(any_meets_threshold, predictions_threshold_met, predictions_no_threshold_met)
-
+    predictions = th.where(any_meets_threshold, predictions_threshold_met, predictions_no_threshold_met)
+    
     return predictions
 
 def grid_search_thresholds_vectorized(probabilities, y_true, step=0.1):
-    n_classes = probabilities.shape[1]
-    threshold_values = np.arange(0.1, 1.0, step)
+    if not isinstance(probabilities, th.Tensor):
+        probabilities = th.tensor(probabilities)
+    if not isinstance(y_true, th.Tensor):
+        y_true = th.tensor(y_true)
+        
+    device = probabilities.device
+    n_classes = probabilities.size(1)
+    threshold_values = th.arange(0.1, 1.0, step, device=device)
     
     # Generate all combinations of thresholds
-    threshold_combinations = np.array(list(product(threshold_values, repeat=n_classes)))
+    # Using th.cartesian_prod for more efficient combination generation
+    threshold_combinations = th.cartesian_prod(*[threshold_values for _ in range(n_classes)])
     
-    # Predict for all threshold combinations
-    all_predictions = np.array([predict_one_vs_rest_vectorized(probabilities, thresholds) 
-                                for thresholds in threshold_combinations])
+    best_accuracy = 0
+    best_thresholds = None
     
-    # Calculate accuracy for all predictions
-    accuracies = np.array([accuracy_score(y_true, pred, normalize=False) for pred in all_predictions])
+    # Process in batches to avoid memory issues
+    batch_size = 100  # Adjust based on available memory
+    num_combinations = threshold_combinations.size(0)
     
-    # Find the best accuracy and corresponding thresholds
-    best_index = np.argmax(accuracies)
-    best_accuracy = accuracies[best_index]
-    best_thresholds = threshold_combinations[best_index]
+    for i in range(0, num_combinations, batch_size):
+        batch_thresholds = threshold_combinations[i:i + batch_size]
+        
+        # Predict for batch of threshold combinations
+        batch_predictions = th.stack([
+            predict_one_vs_rest_vectorized(probabilities, thresholds)
+            for thresholds in batch_thresholds
+        ])
+        
+        # Calculate accuracy for batch predictions
+        batch_accuracies = th.sum(
+            batch_predictions == y_true.unsqueeze(0),
+            dim=1
+        ).float()
+        
+        # Update best accuracy and thresholds
+        batch_best_idx = th.argmax(batch_accuracies)
+        batch_best_accuracy = batch_accuracies[batch_best_idx]
+        
+        if batch_best_accuracy > best_accuracy:
+            best_accuracy = batch_best_accuracy
+            best_thresholds = batch_thresholds[batch_best_idx]
     
     return best_thresholds, best_accuracy
+
+
+# numpy implementation
+# def predict_one_vs_rest_vectorized(probabilities, thresholds):
+#     # Compare each probability with its corresponding threshold
+#     meets_threshold = probabilities >= thresholds
+
+#     # Find where at least one class meets the threshold
+#     any_meets_threshold = np.any(meets_threshold, axis=1)
+
+#     # For samples where at least one class meets the threshold,
+#     # choose the class with the highest probability among those that meet the threshold
+#     masked_probs = np.where(meets_threshold, probabilities, -np.inf)
+#     predictions_threshold_met = np.argmax(masked_probs, axis=1)
+
+#     # For samples where no class meets the threshold, choose the class with the highest probability
+#     predictions_no_threshold_met = np.argmax(probabilities, axis=1)
+
+#     # Combine the predictions
+#     predictions = np.where(any_meets_threshold, predictions_threshold_met, predictions_no_threshold_met)
+
+#     return predictions
+
+# def grid_search_thresholds_vectorized(probabilities, y_true, step=0.1):
+#     n_classes = probabilities.shape[1]
+#     threshold_values = np.arange(0.1, 1.0, step)
+    
+#     # Generate all combinations of thresholds
+#     threshold_combinations = np.array(list(product(threshold_values, repeat=n_classes)))
+    
+#     # Predict for all threshold combinations
+#     all_predictions = np.array([predict_one_vs_rest_vectorized(probabilities, thresholds) 
+#                                 for thresholds in threshold_combinations])
+    
+#     # Calculate accuracy for all predictions
+#     accuracies = np.array([accuracy_score(y_true, pred, normalize=False) for pred in all_predictions])
+    
+#     # Find the best accuracy and corresponding thresholds
+#     best_index = np.argmax(accuracies)
+#     best_accuracy = accuracies[best_index]
+#     best_thresholds = threshold_combinations[best_index]
+    
+#     return best_thresholds, best_accuracy
 
 

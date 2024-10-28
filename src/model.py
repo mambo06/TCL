@@ -69,7 +69,8 @@ class CFL:
     def set_autoencoder(self):
         """Sets up the autoencoder model, optimizer, and loss"""
         # Instantiate the model for the text Autoencoder
-        self.encoder = th.compile(AEWrapper(self.options)) #optime
+        # self.encoder = AEWrapper(self.options) 
+        self.encoder = th.compile(AEWrapper(self.options)) #optime CPU
         # Add the model and its name to a list to save, and load in the future
         self.model_dict.update({"encoder": self.encoder})
         # Assign autoencoder to a device
@@ -97,8 +98,13 @@ class CFL:
             x_tilde_list = self.get_combinations_of_subsets(x_tilde_list)
 
         # 0 - Update Autoencoder
-        tloss, closs, rloss, zloss = self.calculate_loss(x_tilde_list, Xorig) 
-        self.optimizer_ae.zero_grad()
+        tloss, closs, rloss, zloss = self.calculate_loss(x_tilde_list, Xorig)
+
+        # self.optimizer_ae.zero_grad() # GPU
+
+        for param in self.encoder.parameters():
+            param.grad = None
+
 
         tloss.backward()
 
@@ -339,7 +345,7 @@ class CFL:
 
         prefix = str(config['epochs']) + "e-" + str(config["dataset"])
 
-        loaded_state_dict = th.load(self._model_path + "/encoder_"+ prefix + ".pt")
+        loaded_state_dict = th.load(self._model_path + "/encoder_"+ prefix + ".pt", weights_only=True)
         self.encoder.load_state_dict(loaded_state_dict, strict=False)
 
         """Used to load weights saved at the end of the training."""

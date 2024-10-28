@@ -1,0 +1,11 @@
+--2024-10-27 13:51:34--  https://repo.radeon.com/rocm/manylinux/rocm-rel-6.1.3/pytorch_triton_rocm-2.1.0%2Brocm6.1.3.4d510c3a44-cp310-cp310-linux_x86_64.whl
+Resolving repo.radeon.com (repo.radeon.com)... 2600:1415:4c00::172d:a832, 2600:1415:4c00::172d:a839, 23.45.168.57, ...
+Connecting to repo.radeon.com (repo.radeon.com)|2600:1415:4c00::172d:a832|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 206967790 (197M) [application/octet-stream]
+Saving to: ‘pytorch_triton_rocm-2.1.0+rocm6.1.3.4d510c3a44-cp310-cp310-linux_x86_64.whl.2’
+
+             pytorch_triton_r   0%[                                               ] 289.33K  --.-KB/s    eta 36d 2h pytorch_triton_rocm-2.1.0+roc   0%[                                               ] 289.33K  --.-KB/s    in 74m 31s 
+
+2024-10-27 15:06:06 (66.3 B/s) - Read error at byte 296272/206967790 (Connection timed out). Retrying.
+

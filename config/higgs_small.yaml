@@ -61,3 +61,7 @@ reconstruct_subset: true         # If True, reconstructs subset of given input t
                                   # Else, it reconstructs the complete tabular data.
 
 ns : false                        # no pearson shuffle. if true no pearson shuffle applied to the loaded data
+
+subsample: 0.5
+colsample_bytree: 1
+epoch: 50
