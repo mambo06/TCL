@@ -25,7 +25,11 @@ learning_rate: 0.0055              # Learning rate for training
 batch_size: 272                    # Set batch size
 nth_epoch: 1                      # Compute validation loss in every nth_epoch
 validate: false                   # Whether to compute validation loss
+
 scheduler: true                  # If True, turns on scheduler for learning rate.
+reduce_lr: false
+patient: 10
+
 validateScore: false            # if true either rmse or accuracy is used, loss otherwise
 validation: false
 
@@ -59,3 +63,8 @@ reconstruct_subset: true         # If True, reconstructs subset of given input t
 
 ns : false                        # no pearson shuffle. if true no pearson shuffle applied to the loaded data
 local : false
+
+subsample: 0.5
+colsample_bytree: 1
+epoch: 50
+reCalibrate: false

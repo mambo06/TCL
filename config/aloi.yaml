@@ -61,3 +61,7 @@ ns : false                        # no pearson shuffle. if true no pearson shuff
 local : false
 
 # k nearest c = 95
+subsample: 0.5
+colsample_bytree: 1
+epoch: 50
+reCalibrate: false

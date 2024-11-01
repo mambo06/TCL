@@ -19,15 +19,15 @@ normalize: true                   # If True, we do L2 normalization on latent va
 p_norm: 1                         # p-value used for normalization. p=2 for L2 norm, p=1 for L1 norm and so on.
 
 # Parameters for training
-dropout_rate: 0.2                 # Set dropout rate if Dropout is being used
-learning_rate: 0.01              # Learning rate for training
+dropout_rate: 0.01                 # Set dropout rate if Dropout is being used
+learning_rate: 0.1              # Learning rate for training
 
 batch_size: 108                    # Set batch size
 nth_epoch: 1                      # Compute validation loss in every nth_epoch
 validate: false                   # Whether to compute validation loss
 
-scheduler: true                  # If True, turns on scheduler for learning rate.
-reduce_lr: false
+scheduler: false                  # If True, turns on scheduler for learning rate.
+reduce_lr: true
 patient: 10
 
 validateScore: false            # if true either rmse or accuracy is used, loss otherwise
@@ -61,10 +61,10 @@ cosine_similarity: false          # If True, use cosine similarity in NTXentLoss
 reconstruct_subset: true         # If True, reconstructs subset of given input to encoder. 
                                   # Else, it reconstructs the complete tabular data.
 
-ns : false                        # no pearson shuffle. if true no pearson shuffle applied to the loaded data
-local : false
+ns : true                        # no pearson shuffle. if true no pearson shuffle applied to the loaded data
+# {'learning_rate': 0.015, 'max_depth': 8, 'n_estimators': 900}
 
 subsample: 0.5
-colsample_bytree: 0.9
-epoch: 75
-# {'learning_rate': 0.015, 'max_depth': 8, 'n_estimators': 900}
+colsample_bytree: 1
+epoch: 100
+reCalibrate: false

@@ -65,3 +65,5 @@ ns : false                        # no pearson shuffle. if true no pearson shuff
 subsample: 0.5
 colsample_bytree: 1
 epoch: 50
+reCalibrate: true
+reCalibrateTest: true
