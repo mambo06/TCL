@@ -8,8 +8,8 @@ shallow_architecture: true        # If True, we use shallow encoder/decoder arch
 # Architecture-related params
 # The dimension of input features is added automatically, so it does not need to be defined here.
 dims:                             # Autoencoder architecture - This is for Encoder - Decoder is symmetric to Encoder.
-  - 180                           # Hidden. 
-  - 180
+  - 90                           # Hidden. 
+  - 90
 
 isBatchNorm: true                # Set True to use BatchNorm layer
 isDropout: true                  # Set True to use Dropout layer
@@ -25,7 +25,11 @@ learning_rate: 0.0055              # Learning rate for training
 batch_size: 180                    # Set batch size
 nth_epoch: 1                      # Compute validation loss in every nth_epoch
 validate: false                   # Whether to compute validation loss
+
 scheduler: true                  # If True, turns on scheduler for learning rate.
+reduce_lr: false
+patient: 10
+
 validateScore: false            # if true either rmse or accuracy is used, loss otherwise
 validation: false
 
@@ -56,10 +60,9 @@ tau: 0.1                          # Temperature parameter used in NTXentLoss
 reconstruct_subset: true         # If True, reconstructs subset of given input to encoder. 
                                   # Else, it reconstructs the complete tabular data.
 
-ns : false                        # no pearson shuffle. if true no pearson shuffle applied to the loaded data
+ns : true                        # no pearson shuffle. if true no pearson shuffle applied to the loaded data
 local : false
 
-subsample: 0.5
-colsample_bytree: 1
+
 epoch: 50
 reCalibrate: false

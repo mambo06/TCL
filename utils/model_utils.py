@@ -173,7 +173,7 @@ class HiddenLayers(nn.Module):
         super(HiddenLayers, self).__init__()
         self.layers = nn.ModuleList()
         dims = options["dims"]
-        dims[-1] = dims[-1]
+        dims[-1] = dims[-1] * 2
 
         for i in range(1, len(dims) - 1):
             self.layers.append(nn.Linear(dims[i - 1], dims[i]))

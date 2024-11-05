@@ -62,11 +62,11 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
     
     # Sweep regularization parameter to see what works best for logistic regression
     regularisation_list = [0.01, 0.1 , 1, 10, 1e2, 1e3, 1e4, 1e5, 1e6]
-    regularisation_list = [0.1, 1, 10,1e2,]
+    # regularisation_list = [0.1, 1, 10,1e2,]
 
-    regularisation_list = range(90,110,5)
+    # regularisation_list = range(90,110,5)
 
-    param_grid = {"max_depth":    [ 8,10,],
+    param_grid = {"max_depth":    [ 6, 8,10,],
               "n_estimators": [900, 1000],
               "learning_rate": [0.01, 0.015]}
 
@@ -85,7 +85,7 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
         # Initialize Logistic regression
         print(10 * "*" + "parameters=" + str(c) + 10 * "*")
         if config['task_type'] == 'regression':
-            clf0 = LinearRegression()
+            clf0 = LinearRegression(n_jobs=-1, fit_intercept=False)
             clf1 = SVR()
             clf2 = ElasticNet()
             clf3 = KNeighborsRegressor()
@@ -94,17 +94,17 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             clf6 = RandomForestRegressor()
 
             # modelDict['LinearRegression'] = clf0
-            # modelDict['SVR'] = clf1
+            # # modelDict['SVR'] = clf1
             # modelDict['ElasticNet'] = clf2
             # modelDict['KNeighborsRegressor'] = clf3
             # modelDict['Ridge'] = clf4
             # modelDict['HuberRegressor'] = clf5
-            # modelDict['RandomForestRegressor'] = clf6
+            # # modelDict['RandomForestRegressor'] = clf6
 
             # start xgboost
-            # param_grid = {"max_depth": [ 8],
-            #   "n_estimators": [ 1000,],
-            #   "learning_rate": [0.015]}
+            param_grid = {"max_depth": [ 8],
+              "n_estimators": [ 1000,],
+              "learning_rate": [0.015]}
 
             # clf = xgb.XGBRegressor(eval_metric='rmse')
             # search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
@@ -117,7 +117,7 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             clf7 = xgb.XGBRegressor(learning_rate = param_grid["learning_rate"][-1],
                            n_estimators  = param_grid["n_estimators"][-1],
                            max_depth     = param_grid["max_depth"][-1],
-                           eval_metric='rmse',
+                           # eval_metric='rmse',
                            verbosity=0)
             
             # end xgboost
@@ -156,7 +156,7 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             clf6 = KNeighborsClassifier(n_neighbors=90)
 
             # modelDict['LogisticRegression'] = clf0
-            # # modelDict['Decision DecisionTreeClassifier'] = clf1
+            # modelDict['Decision DecisionTreeClassifier'] = clf1
             # modelDict['RandomForestClassifier'] = clf2
             # modelDict['Perceptron'] = clf3
             # modelDict['SVC'] = clf4

@@ -1,4 +1,4 @@
-seed: 57                                                     # Define the random seed for consistent results.
+seed: 100 #57                                                     # Define the random seed for consistent results.
 mlflow: false                                                # Switch to turn on/off mlflow for experiment tracking.
 profile: false                                               # If True, it will profile runtime of each step from main() onwards.
 paths:                                                       #

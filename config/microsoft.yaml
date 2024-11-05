@@ -26,8 +26,8 @@ batch_size: 272                    # Set batch size
 nth_epoch: 1                      # Compute validation loss in every nth_epoch
 validate: false                   # Whether to compute validation loss
 
-scheduler: true                  # If True, turns on scheduler for learning rate.
-reduce_lr: false
+scheduler: false                  # If True, turns on scheduler for learning rate.
+reduce_lr: true
 patient: 10
 
 validateScore: false            # if true either rmse or accuracy is used, loss otherwise
@@ -40,10 +40,11 @@ overlap: 0                     # A ratio [0,1) that defines how many features ar
 # Type of aggregation / pooling for latent variables of subsets
 aggregation: mean                 # options:  mean (default), sum, max, min, and concat
 
+
 # Noise-related options
 add_noise: true                   # If True, it adds noise. The noise type is defined in "noise_type"
 noise_type: gaussian_noise            # Type of noise to add to. Choices: swap_noise, gaussian_noise, zero_out
-masking_ratio: [0.1,0.1]                # Percentage of the feature to add noise to binomial, all applied
+masking_ratio: [0.5,0.5]                # Percentage of the feature to add noise to binomial, all applied
 noise_level: [0.1,0.1]                  # Stdev defined for Gaussian noise
 
 # Data
