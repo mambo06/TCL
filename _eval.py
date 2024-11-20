@@ -335,6 +335,7 @@ def main(config):
 
     """
     # Set directories (or create if they don't exist)
+    # config['seed']=95
     set_dirs(config)
     # Get data loader for first dataset.
     ds_loader = Loader(config, dataset_name=config["dataset"], drop_last=False)

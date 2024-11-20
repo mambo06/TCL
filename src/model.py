@@ -81,6 +81,7 @@ class CFL:
         self.joint_loss = JointLoss(self.options)
         # Set optimizer for autoencoder
         self.optimizer_ae = self._adam(parameters, lr=self.options["learning_rate"])
+        # self.optimizer_ae = self._lbfgs(parameters)
         # Add items to summary to be used for reporting later
         self.summary.update({"recon_loss": []})
 
@@ -404,7 +405,6 @@ class CFL:
         return th.optim.AdamW(itertools.chain(*params), lr=lr, betas=(0.9, 0.999), eps=1e-07)
 
     def _lbfgs(self, params, lr=1e-4):
-        """Sets up AdamW optimizer using model params"""
         return th.optim.ASGD(itertools.chain(*params), lr=lr,)
 
     def _tensor(self, data):

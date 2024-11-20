@@ -46,7 +46,7 @@ def get_arguments():
     
 
     ## addition here
-    parser.add_argument("-e", "--epoch", type=int, default=5,)
+    parser.add_argument("-e", "--epoch", type=int, default=50,)
     parser.add_argument("-cd", "--clientdrop", type=float, default=0, )
     parser.add_argument("-dd", "--datadrop", type=float, default=0, )
     parser.add_argument("-nc", "--noniidclient", type=float, default=0, )

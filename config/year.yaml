@@ -20,14 +20,14 @@ p_norm: 2                         # p-value used for normalization. p=2 for L2 n
 
 # Parameters for training
 dropout_rate: 0.1                 # Set dropout rate if Dropout is being used
-learning_rate: 0.0055              # Learning rate for training
+learning_rate: 0.001              # Learning rate for training
 # epochs: 5                        # Number of epochs to use for training
 batch_size: 180                    # Set batch size
 nth_epoch: 1                      # Compute validation loss in every nth_epoch
 validate: false                   # Whether to compute validation loss
 
-scheduler: true                  # If True, turns on scheduler for learning rate.
-reduce_lr: false
+scheduler: false                  # If True, turns on scheduler for learning rate.
+reduce_lr: true
 patient: 10
 
 validateScore: false            # if true either rmse or accuracy is used, loss otherwise
@@ -43,7 +43,7 @@ aggregation: mean                 # options:  mean (default), sum, max, min, and
 # Noise-related options
 add_noise: true                   # If True, it adds noise. The noise type is defined in "noise_type"
 noise_type: gaussian_noise            # Type of noise to add to. Choices: swap_noise, gaussian_noise, zero_out
-masking_ratio: [0.1,0.1]                # Percentage of the feature to add noise to binomial, all applied
+masking_ratio: [0.5,0.5]                # Percentage of the feature to add noise to binomial, all applied
 noise_level: [0.1,0.1]                  # Stdev defined for Gaussian noise
 
 # Data
@@ -65,4 +65,7 @@ local : false
 
 
 epoch: 50
-reCalibrate: false
+
+subsample: 0.5
+colsample_bytree: 1
+# seed: 100

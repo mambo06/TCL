@@ -36,7 +36,7 @@ from .regression import regressions  as rgs
 from scipy.optimize import minimize_scalar
 from itertools import product
 
-
+from sklearn.preprocessing import QuantileTransformer
 
 
 
@@ -66,9 +66,7 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
 
     # regularisation_list = range(90,110,5)
 
-    param_grid = {"max_depth":    [ 6, 8,10,],
-              "n_estimators": [900, 1000],
-              "learning_rate": [0.01, 0.015]}
+    
 
     if config['task_type'] == 'regression':
         regularisation_list = range(90,140,10)
@@ -99,12 +97,12 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             # modelDict['KNeighborsRegressor'] = clf3
             # modelDict['Ridge'] = clf4
             # modelDict['HuberRegressor'] = clf5
-            # # modelDict['RandomForestRegressor'] = clf6
+            # modelDict['RandomForestRegressor'] = clf6
 
             # start xgboost
-            param_grid = {"max_depth": [ 8],
-              "n_estimators": [ 1000,],
-              "learning_rate": [0.015]}
+            param_grid = {"max_depth": [ 8,],
+              "n_estimators": [ 1000,700],
+              "learning_rate": [0.015,]}
 
             # clf = xgb.XGBRegressor(eval_metric='rmse')
             # search = GridSearchCV(clf, param_grid, cv=2,verbose=1, n_jobs=-1).fit(z_train, y_train)
@@ -117,7 +115,9 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             clf7 = xgb.XGBRegressor(learning_rate = param_grid["learning_rate"][-1],
                            n_estimators  = param_grid["n_estimators"][-1],
                            max_depth     = param_grid["max_depth"][-1],
-                           # eval_metric='rmse',
+                           colsample_bytree=config['colsample_bytree'],
+                           subsample=config['subsample'],
+                           eval_metric='rmse',
                            verbosity=0)
             
             # end xgboost
@@ -126,8 +126,17 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             for item in modelDict:
                 print('Evaluations using', item)
                 clf = modelDict[item]
+
+                # qt = QuantileTransformer(output_distribution='uniform')
+                # z_train = qt.fit_transform(z_train)
+                # z_val = qt.transform(z_val)
+                # z_test = qt.transform(z_test)
+
                 clf.fit(z_train, y_train)
                 # clf.fit(z_train, y_train,  eval_set=[(z_val, y_val)])
+
+
+
 
                     # Score for training set
                 tr_acc = np.sqrt(mean_squared_error( y_train, clf.predict(z_train))) 
@@ -149,20 +158,24 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             
             clf0 = LogisticRegression( solver='lbfgs', C=1, max_iter=2000,)
             clf1 = DecisionTreeClassifier(random_state=0,criterion='entropy',)
-            clf2 = RandomForestClassifier(criterion='log_loss', n_estimators=95, )
+            clf2 = RandomForestClassifier(criterion='log_loss', n_estimators=200, )
             clf3 = Perceptron(tol=1e-3, random_state=0)        
             clf4 = SVC(C=c) 
             clf5 = LinearSVC(C=c)
-            clf6 = KNeighborsClassifier(n_neighbors=90)
+            clf6 = KNeighborsClassifier(n_neighbors=200)
 
             # modelDict['LogisticRegression'] = clf0
             # modelDict['Decision DecisionTreeClassifier'] = clf1
             # modelDict['RandomForestClassifier'] = clf2
             # modelDict['Perceptron'] = clf3
-            # modelDict['SVC'] = clf4
+            # # modelDict['SVC'] = clf4
             # modelDict['LinearSVC'] = clf5
             # modelDict['KNeighborsClassifier'] = clf6
 
+
+            param_grid = {"max_depth":    [ 6, 8,10],
+              "n_estimators": [900, 1000],
+              "learning_rate": [0.01, 0.015]}
 
             # clf = xgb.XGBClassifier(
             #     colsample_bytree=config['colsample_bytree'],
@@ -180,7 +193,7 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
             #                )
             clf = xgb.XGBClassifier(learning_rate = param_grid["learning_rate"][-1],
                            n_estimators  = param_grid["n_estimators"][-1],
-                           max_depth     = param_grid["max_depth"][-1],
+                           max_depth     = param_grid["max_depth"][0],
                            # eval_metric='mlogloss',
                            # early_stopping_rounds = 10,
                            colsample_bytree=config['colsample_bytree'],
@@ -202,10 +215,11 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
                     # cv=5,
                     n_jobs=-1)
             
-                if config['reCalibrateTest']: 
-                    calibrated_clf.fit(z_test, y_test)
-                else:
-                    calibrated_clf.fit(z_val, y_val) 
+                calibrated_clf.fit(z_val, y_val)
+                # if config['reCalibrateTest']: 
+                #     calibrated_clf.fit(z_test, y_test)
+                # else:
+                #     calibrated_clf.fit(z_val, y_val) 
 
 
                 clf = calibrated_clf
@@ -219,7 +233,11 @@ def linear_model_eval(config, z_train, y_train, suffix , z_test, y_test,z_val, y
                     y_hat_test =  clf.predict_proba(z_test)
                     y_hat_val =  clf.predict_proba(z_val)
 
-                    best_thresholds, best_accuracy = grid_search_thresholds_vectorized(y_hat_test, y_test, step=0.005)
+                    print('calculate Thresholds')
+                    if config['reCalibrateTrain'] :
+                        best_thresholds, best_accuracy = grid_search_thresholds_vectorized(y_hat_train, y_train, step=0.1)
+                    else: 
+                        best_thresholds, best_accuracy = grid_search_thresholds_vectorized(y_hat_val, y_val, step=0.1)
                     print(f"\nBest Thresholds: {best_thresholds}")
                     print(f"Best Accuracy: {best_accuracy:.3f}")
 
